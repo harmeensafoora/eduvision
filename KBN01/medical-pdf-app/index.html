@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EduVision</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&display=swap");
+
+    :root {
+      /* Minimalist Editorial Palette with Color Pops */
+      --bg-out: #d4dfc3; /* Soft Sage Green */
+      --bg-in: #ffffff;
+      --grid-line: #e5e7eb;
+      --ink: #1c1917; 
+      --accent: #ffccd5; /* Soft Pink */
+      --accent-hover: #ffb3c1;
+      --marquee-bg: #fef08a; /* Soft Yellow */
+      
+      /* Refined structural variables */
+      --border-width: 1.5px;
+      --border: var(--border-width) solid var(--ink);
+      --shadow: 4px 4px 0px var(--ink); /* Slightly deeper shadow for contrast */
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* Minimal Scrollbar */
+    ::-webkit-scrollbar { width: 12px; height: 12px; }
+    ::-webkit-scrollbar-track { background: var(--bg-out); border-left: var(--border); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-in); border-left: var(--border); border-radius: 0; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      margin: 0;
+      padding: 2.5rem;
+      color: var(--ink);
+      background: var(--bg-out);
+    }
+
+    /* The Grid Paper Canvas */
+    .canvas-wrapper {
+      max-width: 1600px;
+      margin: 0 auto;
+      background-color: var(--bg-in);
+      background-image: 
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 32px 32px; 
+      border: var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 92vh;
+    }
+
+    /* Ultra Minimal Nav Bar */
+    header.nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 3rem;
+      border-bottom: var(--border);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-brand {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: 2.2rem;
+      text-decoration: none;
+      color: var(--ink);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .nav-button {
+      padding: 0.6rem 1.5rem;
+      border-radius: 999px;
+      border: var(--border);
+      background: #fff;
+      box-shadow: 2px 2px 0px var(--ink);
+      transition: all 0.15s ease;
+      text-decoration: none;
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-button:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0px var(--ink);
+      background: var(--accent);
+    }
+
+    /* The Star of the Show */
+    .hero {
+      text-align: center;
+      padding: 8rem 2rem 6rem;
+      background: transparent;
+      border-bottom: var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(4rem, 8vw, 7.5rem); 
+      font-weight: 400; 
+      margin: 0;
+      line-height: 0.9;
+      letter-spacing: -0.05em;
+    }
+
+    .hero p {
+      font-weight: 400;
+      font-size: 1.35rem;
+      max-width: 680px;
+      margin: 0;
+      line-height: 1.5;
+      color: #44403c;
+    }
+
+    /* Animated Marquee */
+    .marquee {
+      background: var(--marquee-bg);
+      border-bottom: var(--border);
+      padding: 0.8rem 0;
+      overflow: hidden;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+    
+    .marquee-content {
+      display: inline-block;
+      font-family: "DM Sans", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      animation: scroll 35s linear infinite;
+      color: var(--ink);
+    }
+    
+    .marquee-content span { margin: 0 3rem; }
+
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* Main App Workspace */
+    main {
+      padding: 3rem;
+      flex-grow: 1;
+      background: rgba(255, 255, 255, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Top Horizontal Control Row */
+    .controls-row {
+      display: grid;
+      grid-template-columns: 2.5fr 1fr;
+      gap: 2rem;
+    }
+
+    .upload-box, .mini-stats {
+      background: #fff;
+      border: var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .upload-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input[type="file"] {
+      border: var(--border);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      background: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      flex-grow: 1;
+    }
+    
+    input[type="file"]::file-selector-button {
+      border: 1px solid var(--ink);
+      background: var(--bg-out);
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-family: inherit;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    
+    input[type="file"]::file-selector-button:hover {
+      background: var(--accent);
+    }
+
+    select {
+      border: var(--border);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      background: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+
+    button {
+      cursor: pointer;
+      border: var(--border);
+      color: var(--ink);
+      padding: 0.6rem 1.5rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background: #fff;
+      box-shadow: var(--shadow);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      transform: translate(-2px, -2px);
+      background: var(--accent);
+      box-shadow: 5px 5px 0px var(--ink);
+    }
+
+    button:disabled { 
+      background: #f5f5f4; 
+      box-shadow: none; 
+      transform: none; 
+      cursor: not-allowed;
+      color: #a8a29e;
+      border-color: #d6d3d1;
+    }
+
+    #uploadBtn { background: var(--ink); color: #fff; }
+    #uploadBtn:hover { background: #44403c; box-shadow: 4px 4px 0px var(--accent); }
+
+    .session-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--grid-line);
+      font-size: 0.85rem;
+      color: #57534e;
+      font-weight: 500;
+    }
+    
+    .status-badge {
+      font-weight: 600;
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Shrunk, horizontal stats */
+    .mini-stats {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.25rem;
+    }
+    
+    .stat span { 
+      font-weight: 600; 
+      text-transform: uppercase; 
+      font-size: 0.65rem; 
+      color: #78716c; 
+      letter-spacing: 0.5px;
+    }
+    
+    .stat strong { 
+      font-family: "Fraunces", serif; 
+      font-size: 1rem; 
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100px;
+    }
+
+    /* Massive Results Folder */
+    .folder-shell {
+      background: #fff;
+      border: var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      min-height: 65vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .folder-head {
+      border-bottom: var(--border);
+      padding: 1rem 2rem;
+      background: #fff;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: none;
+      font-weight: 500;
+      padding: 0.5rem 1.2rem;
+      border-color: transparent;
+    }
+    .tab-button:hover { background: #f5f5f4; transform: none; box-shadow: none;}
+    .tab-button.active { background: var(--accent); border-color: var(--ink); font-weight: 600; }
+
+    .folder-body {
+      padding: 3rem;
+      flex-grow: 1;
+    }
+
+    .tab-pane { display: none; animation: fadeIn 0.3s ease; }
+    .tab-pane.active { display: block; }
+    .tab-pane h3 { 
+      font-family: "Fraunces", serif; 
+      font-size: 2rem; 
+      font-weight: 400;
+      margin-top: 0; 
+      margin-bottom: 2rem; 
+      letter-spacing: -0.02em;
+    }
+
+    /* Adjusted pre styles to apply generically to the markdown containers if needed, though we use div now */
+    pre {
+      background: #fafaf9;
+      border: var(--border);
+      padding: 2rem;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: #292524;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    .action-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap;}
+    .action-row button { width: auto; box-shadow: none; }
+    .action-row button:hover { box-shadow: 2px 2px 0px var(--ink); transform: translate(-2px, -2px); }
+
+    /* Images Grid - Huge Preview area */
+    .images-container { display: grid; grid-template-columns: 350px 1fr; gap: 2.5rem; margin-top: 1.5rem; }
+    .image-list { border: var(--border); padding: 1rem; background: #fafaf9; height: 550px; overflow-y: auto; border-radius: 8px; }
+    .image-preview { border: var(--border); padding: 2.5rem; background: #fff; border-radius: 8px; min-height: 550px;}
+    
+    .image-item { border: var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 0.8rem; cursor: pointer; display: flex; gap: 15px; align-items: center; transition: all 0.2s; background: #fff;}
+    .image-item:hover { background: var(--accent); }
+    .image-item strong { display: block; margin-bottom: 3px; font-family: "DM Sans", sans-serif; font-size: 1rem;}
+    
+    .small-thumb { width: 70px; height: 70px; border: var(--border); object-fit: cover; border-radius: 4px;}
+    .preview-image { max-width: 100%; max-height: 600px; object-fit: contain; border: var(--border); margin-top: 1.5rem; border-radius: 4px;}
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      border: 1px solid var(--ink);
+    }
+    .badge-ok { background: var(--accent); }
+    .badge-blocked { background: var(--grid-line); }
+
+    .bullet-list { padding-left: 1.2rem; margin: 0; line-height: 1.8; font-size: 1.1rem; color: #292524;}
+    .bullet-list li { margin-bottom: 1rem; }
+    #referencesList a { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;}
+    #referencesList a:hover { text-decoration-thickness: 2px; background: var(--accent); }
+
+    .loader {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--ink);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 1024px) {
+      .controls-row { grid-template-columns: 1fr; }
+      .images-container { grid-template-columns: 1fr; }
+      .image-preview { min-height: 300px; }
+    }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .hero { padding: 6rem 1.5rem 4rem; } 
+      main { padding: 1.5rem; }
+      .folder-body { padding: 1.5rem; }
+      header.nav-bar { padding: 1rem 1.5rem; }
+    }
+
+    /* Generalized Markdown styling rules for all generated content */
+    .bullet-list h2, .bullet-list h3 {
+      font-family: "Fraunces", serif;
+      margin-top: 25px;
+      margin-bottom: 10px;
+    }
+    .bullet-list ul, .bullet-list ol {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+    .bullet-list p {
+      margin-bottom: 15px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="canvas-wrapper">
+    
+    <header class="nav-bar">
+      <a href="#" class="nav-brand">ev.</a>
+      <a href="#" class="nav-button">get started ➔</a>
+    </header>
+
+    <section class="hero">
+      <h1>Eduvision.</h1>
+      <p>An AI-powered platform for visualizing, translating, and enriching textbook content.</p>
+    </section>
+
+    <div class="marquee">
+      <div class="marquee-content">
+        <span>Summarize</span> • <span>Translate</span> • <span>Visualize</span> • <span>Enrich</span> • 
+        <span>Summarize</span> • <span>Translate</span> • <span>Visualize</span> • <span>Enrich</span> • 
+        <span>Summarize</span> • <span>Translate</span> • <span>Visualize</span> • <span>Enrich</span> • 
+      </div>
+    </div>
+
+    <main id="workspace">
+      
+      <div class="controls-row">
+        <div class="upload-box">
+          <div class="field-row">
+            <input type="file" id="pdfFile" accept="application/pdf,image/*" />
+            <button id="uploadBtn" type="button">Process Document</button>
+          </div>
+          <div class="session-info-row">
+            <span id="statusText" class="status-badge">Awaiting Upload</span>
+            <span>Session ID: <span id="sessionIdText">—</span></span>
+          </div>
+        </div>
+
+        <div class="mini-stats">
+          <div class="stat"><span>State</span><strong id="statusSummary">Ready</strong></div>
+          <div class="stat"><span>File</span><strong id="fileSummary" title="No File Selected">None</strong></div>
+          <div class="stat"><span>Visuals</span><strong id="imageSummary">0</strong></div>
+        </div>
+      </div>
+
+      <section class="folder-shell">
+        <div class="folder-head">
+          <div class="tabs">
+            <button class="tab-button active" data-tab="summary">Summary</button>
+            <button class="tab-button" data-tab="details">Details</button>
+            <button class="tab-button" data-tab="language">Translation</button>
+            <button class="tab-button" data-tab="images">Visuals</button>
+            <button class="tab-button" data-tab="references">References</button>
+          </div>
+        </div>
+
+        <div class="folder-body">
+          <div id="tab-summary" class="tab-pane active">
+            <h3>Core Concepts</h3>
+            <div id="summaryList" class="bullet-list">
+              <p style="color: #78716c;">Your AI-generated summary will appear here once the document is processed.</p>
+            </div>
+          </div>
+
+          <div id="tab-details" class="tab-pane">
+            <h3>Detailed Breakdown</h3>
+            <div class="action-row">
+              <button id="detailsBtn" type="button">Generate Detailed Explanation</button>
+            </div>
+            <div id="detailsContent" class="bullet-list">
+              <p style="color: #78716c;">Awaiting generation...</p>
+            </div>
+          </div>
+
+          <div id="tab-language" class="tab-pane">
+            <h3>Multilingual Support</h3>
+            <div class="action-row">
+              <select id="languageSelect" style="width: 250px; margin-bottom: 0;">
+                <option value="English">English</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Hindi">Hindi</option>
+                <option value="French">French</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Kannada">Kannada</option>
+              </select>
+              <button id="translateBtn" type="button">Translate Content</button>
+            </div>
+            <div id="translatedContent" class="bullet-list">
+              <p style="color: #78716c;">Select a language and hit translate.</p>
+            </div>
+          </div>
+
+          <div id="tab-images" class="tab-pane">
+            <h3>Anatomical Mapping</h3>
+            <div class="action-row">
+              <button id="loadImagesBtn" type="button">Extract Raw Images</button>
+              <button id="labelImagesBtn" type="button" style="background: var(--accent);">Run AI Vision Match</button>
+              <span id="labelImagesLoading" class="loader" style="display:none;"></span>
+            </div>
+            <div class="images-container">
+              <div class="image-list" id="imagesList">
+                <p style="color: #78716c;">No diagrams loaded.</p>
+              </div>
+              <div class="image-preview" id="imagePreview">
+                <h4 style="margin-top:0; font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 400;">Viewer</h4>
+                <p style="color: #78716c;">Select a thumbnail to inspect.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-references" class="tab-pane">
+            <h3>Prerequisite Links</h3>
+            <div class="action-row">
+              <button id="referencesBtn" type="button">Fetch Reference Material</button>
+            </div>
+            <ul id="referencesList" class="bullet-list">
+              <li>No references loaded yet.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+    let currentSessionId = null;
+    let imagesLoaded = false;
+    let selectedFile = null;
+
+    // Smooth scroll for the get started button
+    document.querySelector('.nav-button').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    const pdfFileInput = document.getElementById("pdfFile");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const statusText = document.getElementById("statusText");
+    const sessionIdText = document.getElementById("sessionIdText");
+    const statusSummary = document.getElementById("statusSummary");
+    const fileSummary = document.getElementById("fileSummary");
+    const imageSummary = document.getElementById("imageSummary");
+
+    const summaryList = document.getElementById("summaryList");
+    const languageSelect = document.getElementById("languageSelect");
+    const translateBtn = document.getElementById("translateBtn");
+    const translatedContent = document.getElementById("translatedContent");
+
+    const detailsBtn = document.getElementById("detailsBtn");
+    const detailsContent = document.getElementById("detailsContent");
+
+    const loadImagesBtn = document.getElementById("loadImagesBtn");
+    const labelImagesBtn = document.getElementById("labelImagesBtn");
+    const labelImagesLoading = document.getElementById("labelImagesLoading");
+    const imagesList = document.getElementById("imagesList");
+    const imagePreview = document.getElementById("imagePreview");
+
+    const referencesBtn = document.getElementById("referencesBtn");
+    const referencesList = document.getElementById("referencesList");
+
+    function setStatus(msg) {
+      statusText.textContent = msg;
+      if (statusSummary) statusSummary.textContent = msg.replace(/^./, (c) => c.toUpperCase());
+    }
+
+    function resolveImageUrl(path) {
+      if (!path) return "";
+      if (path.startsWith("http://") || path.startsWith("https://")) return path;
+      if (/^[A-Za-z]:\\/.test(path)) return "file:///" + path.replace(/\\/g, "/");
+      return API_BASE + path;
+    }
+
+    // Universal Markdown Render Function
+    function renderMarkdown(markdown, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      let safeMarkdown = "";
+      if (typeof markdown === "object") {
+        safeMarkdown = JSON.stringify(markdown, null, 2);
+      } else {
+        safeMarkdown = String(markdown || "");
+      }
+
+      if (safeMarkdown.trim() === "") {
+        container.innerHTML = "<p style='color:#78716c;'>No content returned from AI.</p>";
+        return;
+      }
+
+      try {
+        if (typeof window.marked === 'undefined') {
+          throw new Error("Marked.js library is not loaded from the CDN!");
+        }
+        container.innerHTML = window.marked.parse(safeMarkdown);
+      } catch (err) {
+        console.error(`Markdown rendering error for ${containerId}:`, err);
+        container.innerHTML = `<p style="color:#dc2626; font-weight:600;">Formatting Error. Raw text below:</p><pre style="white-space: pre-wrap; font-family: inherit; font-size: 1rem; background: transparent; border: none; padding: 0;">${safeMarkdown}</pre>`;
+      }
+    }
+
+    function activateTab(tab) {
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+      const btn = document.querySelector(`.tab-button[data-tab="${tab}"]`);
+      const pane = document.getElementById("tab-" + tab);
+      if (btn) btn.classList.add("active");
+      if (pane) pane.classList.add("active");
+    }
+
+    function renderReferencesList(refs) {
+      referencesList.innerHTML = "";
+      if (!refs || refs.length === 0) {
+        referencesList.innerHTML = "<li>No references returned.</li>";
+        return;
+      }
+      refs.forEach(ref => {
+        const li = document.createElement("li");
+        const urlMatch = ref.match(/https?:\/\/\S+/);
+        const url = urlMatch ? urlMatch[0].replace(/[)\]]+$/, "") : null;
+        const textWithoutNumber = ref.replace(/^\d+[\).\s-]*/, "").trim();
+        if (url) {
+          const a = document.createElement("a");
+          a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+          a.textContent = textWithoutNumber || url;
+          li.appendChild(a);
+        } else {
+          li.textContent = ref;
+        }
+        referencesList.appendChild(li);
+      });
+    }
+
+    document.querySelectorAll(".tab-button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.tab;
+        activateTab(tab);
+        if (tab === "images" && currentSessionId && !imagesLoaded) {
+          imagesList.innerHTML = "<p>Loading images...</p>";
+          loadImages(false);
+        }
+      });
+    });
+
+    pdfFileInput.addEventListener("change", () => {
+      selectedFile = pdfFileInput.files && pdfFileInput.files[0] ? pdfFileInput.files[0] : null;
+      if (selectedFile) {
+        let fileName = selectedFile.name;
+        if (fileName.length > 15) fileName = fileName.substring(0, 12) + "...";
+        if (fileSummary) fileSummary.textContent = fileName;
+      } else if (fileSummary) {
+        fileSummary.textContent = "None";
+      }
+    });
+
+    uploadBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!selectedFile) { alert("Please select a PDF or image file first."); return; }
+      
+      setStatus("Processing...");
+      uploadBtn.disabled = true;
+      summaryList.innerHTML = "<p>Generating summary...</p>";
+      
+      imagesLoaded = false;
+      imagesList.innerHTML = "<p>No images loaded yet.</p>";
+      imagePreview.innerHTML = "<h4 style='margin-top:0; font-family: \"Fraunces\", serif; font-size: 1.5rem; font-weight: 400;'>Viewer</h4><p style='color: #78716c;'>Select a thumbnail to inspect.</p>";
+      
+      try {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        
+        const res = await fetch(`${API_BASE}/upload`, { method: "POST", body: formData });
+        if (!res.ok) throw new Error("Upload failed: " + res.status);
+        
+        const data = await res.json();
+        
+        currentSessionId = data.session_id;
+        sessionIdText.textContent = currentSessionId.substring(0, 12) + "...";
+        if (imageSummary) imageSummary.textContent = data.image_count ?? 0;
+
+        // Apply markdown to summary
+        renderMarkdown(data.summary, "summaryList");
+        
+        activateTab("summary");
+        setStatus("Complete");
+        
+      } catch (err) {
+        console.error(err);
+        setStatus("Upload Error");
+        alert("Error: " + err.message);
+        summaryList.innerHTML = "<p style='color: red;'>Error loading summary.</p>";
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+
+    translateBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!currentSessionId) { alert("Upload a PDF first."); return; }
+      const lang = languageSelect.value;
+      setStatus(`Translating...`);
+      translateBtn.disabled = true;
+      translatedContent.innerHTML = "<p>Loading translation...</p>";
+      try {
+        const res = await fetch(`${API_BASE}/translate/${currentSessionId}?language=${encodeURIComponent(lang)}`);
+        if (!res.ok) throw new Error("Translate failed: " + res.status);
+        const data = await res.json();
+        
+        // Apply markdown to translated content
+        renderMarkdown(data.summary, "translatedContent");
+        
+        setStatus("Complete");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error");
+        alert("Error: " + err.message);
+      } finally {
+        translateBtn.disabled = false;
+      }
+    });
+
+    detailsBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!currentSessionId) { alert("Upload a PDF first."); return; }
+      setStatus("Loading...");
+      detailsBtn.disabled = true;
+      detailsContent.innerHTML = "<p>Loading detailed explanation...</p>";
+      try {
+        const res = await fetch(`${API_BASE}/details/${currentSessionId}`);
+        if (!res.ok) throw new Error("Details failed: " + res.status);
+        const data = await res.json();
+        
+        // Apply markdown to detailed explanation
+        renderMarkdown(data.details, "detailsContent");
+        
+        setStatus("Complete");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error");
+        alert("Error: " + err.message);
+      } finally {
+        detailsBtn.disabled = false;
+      }
+    });
+
+    async function loadImages(updateGlobalStatus = true) {
+      if (!currentSessionId) { alert("Upload a PDF first."); return; }
+      if (updateGlobalStatus) setStatus("Loading...");
+      loadImagesBtn.disabled = true;
+      imagesList.innerHTML = "<p>Loading images...</p>";
+      
+      try {
+        const res = await fetch(`${API_BASE}/images/${currentSessionId}`);
+        if (!res.ok) throw new Error("Images fetch failed: " + res.status);
+        const data = await res.json();
+        const originalImages = data.images || [];
+        renderImagesList(originalImages, []);
+        imagesLoaded = true;
+        if (updateGlobalStatus) setStatus("Complete");
+      } catch (err) {
+        console.error(err);
+        if (updateGlobalStatus) setStatus("Error");
+        alert("Error: " + err.message);
+      } finally {
+        loadImagesBtn.disabled = false;
+      }
+    }
+
+    loadImagesBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      loadImages(true);
+    });
+
+    labelImagesBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!currentSessionId) { alert("Upload a PDF first."); return; }
+      setStatus("Analyzing...");
+      labelImagesBtn.disabled = true;
+      labelImagesLoading.style.display = "inline-block";
+      try {
+        const res = await fetch(`${API_BASE}/images/label/${currentSessionId}`, { method: "POST" });
+        if (!res.ok) throw new Error("Label images failed: " + res.status);
+        const data = await res.json();
+        renderImagesList([], data.results || []);
+        imagesLoaded = true;
+        setStatus("Complete");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error");
+        alert("Error: " + err.message);
+      } finally {
+        labelImagesBtn.disabled = false;
+        labelImagesLoading.style.display = "none";
+      }
+    });
+
+    function renderImagesList(originalImages = [], labeledResults = []) {
+      const items = [];
+
+      if (labeledResults && labeledResults.length > 0) {
+        labeledResults.forEach((item, index) => {
+          const status = item.image_generation_status || (item.labeled_image_url ? "ok" : "not_found");
+          const badgeClass = status === "ok" ? "badge-ok" : "badge-blocked";
+          const labelList = (item.labels || []).join(", ");
+          const originalResolved = item.original ? resolveImageUrl(item.original) : "";
+          const labeledResolved = item.labeled_image_url ? resolveImageUrl(item.labeled_image_url) : "";
+
+          items.push(`
+            <div class="image-item" data-index="${index}"
+                 data-original-url="${originalResolved}"
+                 data-labeled-url="${labeledResolved}"
+                 data-organ="${(item.organ || "").replace(/"/g, '&quot;')}"
+                 data-labels="${labelList.replace(/"/g, '&quot;')}">
+              <div style="flex:1">
+                <strong>Figure ${index + 1}</strong>
+                <span class="badge ${badgeClass}">${status}</span><br>
+                <span style="font-size: 0.85rem; color: #57534e; margin-top: 5px; display: inline-block;">Target: ${item.organ || "unknown"}</span>
+              </div>
+              ${originalResolved ? `<img src="${originalResolved}" class="small-thumb" />` : ""}
+            </div>
+          `);
+        });
+      } else {
+        originalImages.forEach((imgPath, index) => {
+          const resolved = resolveImageUrl(imgPath);
+          items.push(`
+            <div class="image-item" data-index="${index}"
+                 data-original-url="${resolved}"
+                 data-labeled-url=""
+                 data-organ=""
+                 data-labels="">
+              <div style="flex:1"><strong>Figure ${index + 1}</strong><br><span class="badge badge-blocked">Unlabeled</span></div>
+              <img src="${resolved}" class="small-thumb" />
+            </div>
+          `);
+        });
+      }
+
+      imagesList.innerHTML = items.length ? items.join("") : "<p>No images found.</p>";
+      const imageItems = imagesList.querySelectorAll(".image-item");
+
+      imageItems.forEach((el) => {
+        el.addEventListener("click", () => {
+          const originalUrl = el.getAttribute("data-original-url");
+          const labeledUrl = el.getAttribute("data-labeled-url");
+          const organ = el.getAttribute("data-organ") || "unknown";
+          const labels = el.getAttribute("data-labels") || "";
+
+          let html = `<h4 style='margin-top:0; font-family: "Fraunces", serif; font-size: 1.5rem; font-weight: 400;'>Viewer</h4>`;
+          if(organ !== "unknown" || labels) {
+             html += `<div style="background: #fafaf9; padding: 1.2rem; border: var(--border); border-radius: 6px; margin-bottom: 1.5rem;">`;
+             html += `<p style="margin:0 0 5px 0; font-size: 0.95rem;"><strong>Identified Organ:</strong> <span style="text-transform: capitalize;">${organ}</span></p>`;
+             if (labels) html += `<p style="margin:0; font-size: 0.9rem; color: #44403c;"><strong>Labels:</strong> ${labels}</p>`;
+             html += `</div>`;
+          }
+
+          if (labeledUrl) {
+            html += `
+              <div>
+                <p style="font-weight: 600; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 8px; letter-spacing: 0.5px; color: #57534e;">AI Enhanced Map</p>
+                <img src="${resolveImageUrl(labeledUrl)}" class="preview-image" />
+              </div>
+            `;
+          } else if (originalUrl) {
+            html += `
+              <div>
+                <p style="font-weight: 600; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 8px; letter-spacing: 0.5px; color: #57534e;">Source Extraction</p>
+                <img src="${originalUrl}" class="preview-image" />
+              </div>
+            `;
+          }
+          imagePreview.innerHTML = html;
+        });
+      });
+
+      if (imageItems.length > 0) imageItems[0].click();
+    }
+
+    referencesBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!currentSessionId) { alert("Upload a PDF first."); return; }
+      setStatus("Fetching...");
+      referencesBtn.disabled = true;
+      referencesList.innerHTML = "<li>Loading references...</li>";
+      try {
+        const res = await fetch(`${API_BASE}/references/${currentSessionId}`);
+        if (!res.ok) throw new Error("References failed: " + res.status);
+        const data = await res.json();
+        renderReferencesList(data.references || []);
+        setStatus("Complete");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error");
+        alert("Error: " + err.message);
+      } finally {
+        referencesBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
