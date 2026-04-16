@@ -252,5 +252,69 @@ class AIService:
     def question_hash(topic_id: str, question_text: str) -> str:
         return hashlib.sha256(f"{topic_id}:{question_text}".encode()).hexdigest()
 
+    # ── Visualization: concept map diagram ───────────────────────────────────
+
+    def generate_diagram(self, topic_name: str, excerpts: str) -> dict:
+        """Generate a concept map (nodes + edges) for a topic from PDF excerpts.
+        Returns: {nodes: [{id, label, type}], edges: [{from, to, label}]}
+        """
+        system = (
+            f"You are an expert educational diagram designer. "
+            f"Given document excerpts about '{topic_name}', create a concept map. "
+            f"Return a JSON object with exactly this schema: "
+            f'{{ "nodes": [{{"id": "n1", "label": "...", "type": "core|concept|example"}}], '
+            f'"edges": [{{"from": "n1", "to": "n2", "label": "..."}}] }}. '
+            f"Constraints: maximum 12 nodes, maximum 18 edges. "
+            f"Node types: 'core' for the central topic, 'concept' for key ideas, 'example' for instances. "
+            f"Use only information from the excerpts. Do not fabricate connections."
+        )
+        user = f"Document excerpts for '{topic_name}':\n\n{excerpts}"
+        raw = self._call(
+            [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            max_tokens=1500,
+            json_mode=True,
+        )
+        try:
+            result = self._parse_json(raw)
+            nodes = result.get("nodes", [])[:12]
+            edges = result.get("edges", [])[:18]
+            return {"nodes": nodes, "edges": edges}
+        except Exception:
+            return {"nodes": [], "edges": []}
+
+    # ── Visualization: image annotations ─────────────────────────────────────
+
+    def generate_image_annotations(
+        self, topic_name: str, image_description: str, excerpts: str
+    ) -> list[dict]:
+        """Generate annotation labels for an extracted PDF image.
+        Returns: [{label, x, y, description}] where x,y are 0.0-1.0 relative coordinates.
+        """
+        system = (
+            f"You are an expert educational annotator. "
+            f"Given a description of a diagram/image from a PDF about '{topic_name}', "
+            f"generate annotation labels for the key elements visible. "
+            f"Return a JSON array: "
+            f'[{{"label": "...", "x": 0.5, "y": 0.3, "description": "..."}}]. '
+            f"x and y are relative coordinates (0.0 = left/top, 1.0 = right/bottom). "
+            f"Maximum 8 annotations. Use only information from the excerpts and image description."
+        )
+        user = (
+            f"Image description: {image_description}\n\n"
+            f"Document excerpts:\n{excerpts[:1500]}"
+        )
+        raw = self._call(
+            [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            max_tokens=800,
+            json_mode=True,
+        )
+        try:
+            result = self._parse_json(raw)
+            if isinstance(result, dict):
+                result = result.get("annotations", list(result.values())[0] if result else [])
+            return result[:8] if isinstance(result, list) else []
+        except Exception:
+            return []
+
 
 ai_service = AIService()
