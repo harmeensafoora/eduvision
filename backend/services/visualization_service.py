@@ -5,7 +5,9 @@ Provides two modes:
   labelled — extract first image from PDF via PyMuPDF + AI annotations
   diagram  — AI-generated concept map (nodes + edges) from topic excerpts
 """
+
 import base64
+import tempfile
 from typing import Any
 
 from sqlalchemy.orm import Session as DBSession
@@ -13,6 +15,38 @@ from sqlalchemy.orm import Session as DBSession
 from backend.models.pdf_model import PDF
 from backend.models.topic import Topic
 from backend.services.ai_service import ai_service
+
+
+def _get_local_pdf_path(blob_url: str) -> tuple[str, str | None]:
+    """
+    Resolve a PDF blob_url to a local file path.
+
+    Returns (file_path, cleanup_path) where cleanup_path is the temp file to
+    delete after use (or None for local files).
+
+    Handles:
+      - /static/uploads/... → resolved via storage_service.local_path()
+      - https://... (Azure)  → downloaded to temp file
+      - other               → returned as-is (fallback)
+    """
+    import requests
+
+    if blob_url.startswith("/static"):
+        # Local file path
+        from backend.services.storage_service import storage_service
+
+        return (str(storage_service.local_path(blob_url)), None)
+
+    if blob_url.startswith("https://"):
+        # Azure Blob Storage URL - download to temp file
+        response = requests.get(blob_url, timeout=30)
+        response.raise_for_status()
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp.write(response.content)
+            return (tmp.name, tmp.name)  # Return path and cleanup path
+
+    # Fallback: assume it's already a local path
+    return (blob_url, None)
 
 
 def _get_topic_excerpts(topic: Topic, db: DBSession, max_chars: int = 3000) -> str:
@@ -70,17 +104,17 @@ def _extract_first_image(pdf_file_path: str) -> dict | None:
 
 
 class VisualizationService:
-
     def get_labelled(self, topic: Topic, db: DBSession) -> dict[str, Any]:
         """Return labelled image visualization."""
         excerpts = _get_topic_excerpts(topic, db)
 
         # Find the best PDF file path for this topic using the confirmed blob_url field
         pdf_file_path = None
+        cleanup_path = None
         if topic.best_pdf_id:
             pdf = db.query(PDF).filter(PDF.id == topic.best_pdf_id).first()
             if pdf:
-                pdf_file_path = pdf.blob_url  # confirmed field name from pdf_model.py
+                pdf_file_path, cleanup_path = _get_local_pdf_path(pdf.blob_url)
 
         if not pdf_file_path:
             return {
@@ -92,7 +126,17 @@ class VisualizationService:
                 "message": "No diagrams found in this topic's source PDF",
             }
 
-        image_data = _extract_first_image(pdf_file_path)
+        image_data = None
+        try:
+            image_data = _extract_first_image(pdf_file_path)
+        finally:
+            if cleanup_path:
+                import os
+
+                try:
+                    os.unlink(cleanup_path)
+                except OSError:
+                    pass
         if not image_data:
             return {
                 "mode": "labelled",
