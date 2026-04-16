@@ -5,6 +5,7 @@ GET  /api/summary/{session_id}/{topic_id}?depth=structured&lang=en
 POST /api/summary/{summary_id}/translate    body: {lang}
 GET  /api/summary/languages                 list of supported languages
 """
+
 import json
 import uuid
 from datetime import datetime, timezone
@@ -12,13 +13,17 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session as DBSession
 
+from backend.config import settings
 from backend.database import get_db
 from backend.models.pdf_model import PDF
 from backend.models.summary import Summary
 from backend.models.topic import Topic
 from backend.schemas.summary import SummaryOut, TranslateRequest
 from backend.services.ai_service import ai_service
-from backend.services.translation_service import translation_service, SUPPORTED_LANGUAGES
+from backend.services.translation_service import (
+    translation_service,
+    SUPPORTED_LANGUAGES,
+)
 from backend.utils.auth_utils import get_current_user
 from backend.utils.cache import cache
 from backend.models.user import User
@@ -39,10 +44,7 @@ def _get_topic_excerpts(topic: Topic, db: DBSession, max_chars: int = 3000) -> s
             continue
         # Use chunks that mention the topic name (simple heuristic)
         topic_lower = topic.name.lower()
-        relevant = [
-            c["text"] for c in pdf.chunks
-            if topic_lower in c["text"].lower()
-        ]
+        relevant = [c["text"] for c in pdf.chunks if topic_lower in c["text"].lower()]
         if not relevant:
             # Fall back to first few chunks
             relevant = [c["text"] for c in pdf.chunks[:4]]
@@ -59,7 +61,11 @@ def get_languages():
     return SUPPORTED_LANGUAGES
 
 
-@router.get("/{session_id}/{topic_id}", response_model=SummaryOut, summary="Get or generate summary")
+@router.get(
+    "/{session_id}/{topic_id}",
+    response_model=SummaryOut,
+    summary="Get or generate summary",
+)
 def get_summary(
     session_id: str,
     topic_id: str,
@@ -68,7 +74,11 @@ def get_summary(
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.session_id == session_id).first()
+    topic = (
+        db.query(Topic)
+        .filter(Topic.id == topic_id, Topic.session_id == session_id)
+        .first()
+    )
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found.")
 
@@ -82,11 +92,15 @@ def get_summary(
         return SummaryOut(**data)
 
     # Check DB
-    existing = db.query(Summary).filter(
-        Summary.topic_id == topic_id,
-        Summary.depth == depth,
-        Summary.language == lang,
-    ).first()
+    existing = (
+        db.query(Summary)
+        .filter(
+            Summary.topic_id == topic_id,
+            Summary.depth == depth,
+            Summary.language == lang,
+        )
+        .first()
+    )
     if existing:
         out = SummaryOut(
             id=existing.id,
@@ -109,7 +123,9 @@ def get_summary(
             detail="No content found for this topic in your uploaded PDFs.",
         )
 
-    content = ai_service.generate_summary(topic.name, excerpts, depth, learner_type, lang)
+    content = ai_service.generate_summary(
+        topic.name, excerpts, depth, learner_type, lang
+    )
     keywords = []
     for section in content.get("sections", []):
         keywords.extend(section.get("keywords", []))
@@ -158,21 +174,26 @@ def translate_summary(
             "content": summary.content,
             "language": summary.language,
             "translated": False,
+            "rtl": body.lang in _RTL_LANGS,
+            "keywords": summary.keywords or [],
         }
 
-    translated_content = translation_service.translate_summary(summary.content, body.lang)
-    lang_info = next((l for l in SUPPORTED_LANGUAGES if l["code"] == body.lang), None)
-    rtl = lang_info["rtl"] if lang_info else False
+    translated_content = translation_service.translate_summary(
+        summary.content, body.lang
+    )
+    rtl = body.lang in _RTL_LANGS
+
+    # Translate keywords list
+    translated_keywords = []
+    for kw in summary.keywords or []:
+        result = translation_service.translate_text(kw, body.lang)
+        translated_keywords.append(result["text"])
 
     return {
         "id": summary.id,
         "content": translated_content,
         "language": body.lang,
-        "translated": settings_use_translation(),
+        "translated": settings.USE_TRANSLATION,
         "rtl": rtl,
+        "keywords": translated_keywords,
     }
-
-
-def settings_use_translation():
-    from backend.config import settings
-    return settings.USE_TRANSLATION
