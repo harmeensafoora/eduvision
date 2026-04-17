@@ -6,6 +6,7 @@ GET  /api/session/list        user's sessions
 GET  /api/session/{id}        session detail + topics
 GET  /api/session/{id}/status polling endpoint (processing | ready | error)
 """
+
 import json
 import uuid
 from datetime import datetime, timezone
@@ -30,6 +31,7 @@ router = APIRouter(prefix="/session", tags=["session"])
 
 # ── Background processing ─────────────────────────────────────────────────────
 
+
 def _process_session(session_id: str, pdf_ids: list[str], db_factory):
     """Run full PDF pipeline in a background thread."""
     db: DBSession = db_factory()
@@ -39,7 +41,11 @@ def _process_session(session_id: str, pdf_ids: list[str], db_factory):
             return
 
         from backend.services.pdf_service import (
-            process_pdf, cluster_topics, name_topics, score_coverage, embed_chunks
+            process_pdf,
+            cluster_topics,
+            name_topics,
+            score_coverage,
+            embed_chunks,
         )
         from backend.services.storage_service import storage_service
         from backend.services.ai_service import ai_service
@@ -47,14 +53,20 @@ def _process_session(session_id: str, pdf_ids: list[str], db_factory):
 
         all_chunks = []
         all_embeddings = []
-        pdf_chunk_ranges: list[tuple[int, int]] = []  # (start, end) indices into all_chunks
+        pdf_chunk_ranges: list[
+            tuple[int, int]
+        ] = []  # (start, end) indices into all_chunks
 
         for pdf_id in pdf_ids:
             pdf = db.query(PDF).filter(PDF.id == pdf_id).first()
             if not pdf or not pdf.blob_url:
                 continue
             try:
-                file_path = storage_service.local_path(pdf.blob_url) if pdf.blob_url.startswith("/static") else pdf.blob_url
+                file_path = (
+                    storage_service.local_path(pdf.blob_url)
+                    if pdf.blob_url.startswith("/static")
+                    else pdf.blob_url
+                )
                 result = process_pdf(file_path)
                 start = len(all_chunks)
                 all_chunks.extend(result["chunks"])
@@ -133,7 +145,9 @@ def _process_session(session_id: str, pdf_ids: list[str], db_factory):
             for pdf_id_iter in pdf_ids:
                 pdf_obj = db.query(PDF).filter(PDF.id == pdf_id_iter).first()
                 if pdf_obj and pdf_obj.coverage_scores:
-                    coverage_map[pdf_id_iter] = pdf_obj.coverage_scores.get(topic.id, 0.0)
+                    coverage_map[pdf_id_iter] = pdf_obj.coverage_scores.get(
+                        topic.id, 0.0
+                    )
             topic.coverage_scores = coverage_map
 
         session.status = "ready"
@@ -152,6 +166,7 @@ def _process_session(session_id: str, pdf_ids: list[str], db_factory):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+
 @router.post("/upload", summary="Upload PDFs and start analysis")
 async def upload_pdfs(
     background_tasks: BackgroundTasks,
@@ -162,12 +177,22 @@ async def upload_pdfs(
     if not files:
         raise HTTPException(status_code=400, detail="No files provided.")
 
-    pdf_files = [f for f in files if f.content_type in ("application/pdf", "application/octet-stream") or (f.filename or "").endswith(".pdf")]
+    pdf_files = [
+        f
+        for f in files
+        if f.content_type in ("application/pdf", "application/octet-stream")
+        or (f.filename or "").endswith(".pdf")
+    ]
     if not pdf_files:
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
     # Derive session title from first filename
-    title = Path(pdf_files[0].filename or "Untitled").stem.replace("_", " ").replace("-", " ").title()
+    title = (
+        Path(pdf_files[0].filename or "Untitled")
+        .stem.replace("_", " ")
+        .replace("-", " ")
+        .title()
+    )
     if len(pdf_files) > 1:
         title += f" + {len(pdf_files) - 1} more"
 
@@ -185,7 +210,10 @@ async def upload_pdfs(
         pdf_id = str(uuid.uuid4())
         content = await upload.read()
         import io
-        url = storage_service.save(io.BytesIO(content), upload.filename or f"{pdf_id}.pdf", current_user.id)
+
+        url = storage_service.save(
+            io.BytesIO(content), upload.filename or f"{pdf_id}.pdf", current_user.id
+        )
         pdf = PDF(
             id=pdf_id,
             session_id=session_id,
@@ -199,6 +227,7 @@ async def upload_pdfs(
     db.commit()
 
     from backend.database import SessionLocal
+
     background_tasks.add_task(_process_session, session_id, pdf_ids, SessionLocal)
 
     return {"session_id": session_id, "status": "processing", "pdf_count": len(pdf_ids)}
@@ -218,26 +247,36 @@ def list_sessions(
     )
     result = []
     for s in sessions:
-        result.append({
-            "id": s.id,
-            "title": s.title,
-            "pdf_count": len(s.pdf_ids or []),
-            "status": s.status,
-            "created_at": s.created_at.isoformat() if s.created_at else None,
-            "last_accessed": s.last_accessed.isoformat() if s.last_accessed else None,
-        })
+        result.append(
+            {
+                "id": s.id,
+                "title": s.title,
+                "pdf_count": len(s.pdf_ids or []),
+                "status": s.status,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "last_accessed": s.last_accessed.isoformat()
+                if s.last_accessed
+                else None,
+            }
+        )
     return result
 
 
-@router.get("/{session_id}/status", response_model=SessionStatusOut, summary="Poll processing status")
+@router.get(
+    "/{session_id}/status",
+    response_model=SessionStatusOut,
+    summary="Poll processing status",
+)
 def session_status(
     session_id: str,
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    session = db.query(Session).filter(
-        Session.id == session_id, Session.user_id == current_user.id
-    ).first()
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
     return SessionStatusOut(session_id=session_id, status=session.status)
@@ -249,9 +288,11 @@ def get_session(
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    session = db.query(Session).filter(
-        Session.id == session_id, Session.user_id == current_user.id
-    ).first()
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
 
@@ -265,21 +306,25 @@ def get_session(
     topic_list = []
     for t in topics:
         best_cov = max(t.coverage_scores.values()) if t.coverage_scores else 0.0
-        topic_list.append({
-            "id": t.id,
-            "name": t.name,
-            "coverage": round(best_cov * 100),
-            "best_pdf_id": t.best_pdf_id,
-        })
+        topic_list.append(
+            {
+                "id": t.id,
+                "name": t.name,
+                "coverage": round(best_cov * 100),
+                "best_pdf_id": t.best_pdf_id,
+            }
+        )
 
     pdf_list = []
     for p in pdfs:
-        pdf_list.append({
-            "id": p.id,
-            "filename": p.filename,
-            "page_count": p.page_count,
-            "blob_url": p.blob_url,
-        })
+        pdf_list.append(
+            {
+                "id": p.id,
+                "filename": p.filename,
+                "page_count": p.page_count,
+                "blob_path": p.blob_url,  # Store path; get fresh URL via /pdf/{pdf_id}/url
+            }
+        )
 
     return {
         "id": session.id,
@@ -289,3 +334,29 @@ def get_session(
         "pdfs": pdf_list,
         "created_at": session.created_at.isoformat() if session.created_at else None,
     }
+
+
+@router.get("/{session_id}/pdf/{pdf_id}/url", summary="Get a fresh read URL for a PDF")
+def get_pdf_url(
+    session_id: str,
+    pdf_id: str,
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db),
+):
+    """Generate a fresh read URL (with SAS token for Azure) for a PDF.
+    Call this endpoint when you need to display/download a PDF in the frontend."""
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    pdf = db.query(PDF).filter(PDF.id == pdf_id, PDF.session_id == session_id).first()
+    if not pdf:
+        raise HTTPException(status_code=404, detail="PDF not found.")
+
+    # Generate fresh URL (SAS token refreshed on each request)
+    read_url = storage_service.get_read_url(pdf.blob_url)
+    return {"pdf_id": pdf_id, "url": read_url}
