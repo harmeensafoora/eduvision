@@ -76,6 +76,9 @@ class Settings:
     # CORS
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
+    # Upload limits
+    MAX_UPLOAD_MB: int = int(os.getenv("MAX_UPLOAD_MB", "50"))
+
     @property
     def db_url(self) -> str:
         if self.USE_SQLITE:
