@@ -5,6 +5,7 @@ POST /api/quiz/generate    body: GenerateQuizRequest → questions
 POST /api/quiz/submit      body: SubmitQuizRequest   → scored results
 GET  /api/quiz/history     user's quiz history
 """
+
 import difflib
 import json
 import uuid
@@ -55,7 +56,9 @@ def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
         return {
             "is_correct": is_correct,
             "score": 100 if is_correct else 0,
-            "feedback": explanation if is_correct else f"Correct answer: {correct}. {explanation}",
+            "feedback": explanation
+            if is_correct
+            else f"Correct answer: {correct}. {explanation}",
         }
 
     if qtype == "ow":
@@ -73,7 +76,11 @@ def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
             return result
         except Exception:
             score = int(ratio * 100)
-            return {"is_correct": score >= 70, "score": score, "feedback": f"Correct: {correct}"}
+            return {
+                "is_correct": score >= 70,
+                "score": score,
+                "feedback": f"Correct: {correct}",
+            }
 
     if qtype == "os":
         try:
@@ -82,7 +89,11 @@ def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
             )
             return result
         except Exception:
-            return {"is_correct": False, "score": 0, "feedback": f"Could not evaluate. Correct: {correct}"}
+            return {
+                "is_correct": False,
+                "score": 0,
+                "feedback": f"Could not evaluate. Correct: {correct}",
+            }
 
     if qtype == "match":
         # student_answer expected as list of [left, right] pairs
@@ -111,15 +122,19 @@ def generate_quiz(
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    topic = db.query(Topic).filter(
-        Topic.id == body.topic_id, Topic.session_id == body.session_id
-    ).first()
+    topic = (
+        db.query(Topic)
+        .filter(Topic.id == body.topic_id, Topic.session_id == body.session_id)
+        .first()
+    )
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found.")
 
-    session = db.query(Session).filter(
-        Session.id == body.session_id, Session.user_id == current_user.id
-    ).first()
+    session = (
+        db.query(Session)
+        .filter(Session.id == body.session_id, Session.user_id == current_user.id)
+        .first()
+    )
     if not session:
         raise HTTPException(status_code=403, detail="Not your session.")
 
@@ -140,7 +155,7 @@ def generate_quiz(
     )
     prev_questions: list[str] = []
     for pq in prev_quizzes:
-        for q in (pq.questions or []):
+        for q in pq.questions or []:
             prev_questions.append(q.get("question", ""))
 
     questions = ai_service.generate_quiz(
@@ -154,7 +169,9 @@ def generate_quiz(
     )
 
     if not questions:
-        raise HTTPException(status_code=500, detail="Quiz generation failed. Check AI configuration.")
+        raise HTTPException(
+            status_code=500, detail="Quiz generation failed. Check AI configuration."
+        )
 
     # Add source chunk index and hash
     for q in questions:
@@ -184,15 +201,19 @@ def generate_quiz(
     }
 
 
-@router.post("/submit", response_model=QuizResultOut, summary="Submit answers and get results")
+@router.post(
+    "/submit", response_model=QuizResultOut, summary="Submit answers and get results"
+)
 def submit_quiz(
     body: SubmitQuizRequest,
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    quiz = db.query(Quiz).filter(
-        Quiz.id == body.quiz_id, Quiz.user_id == current_user.id
-    ).first()
+    quiz = (
+        db.query(Quiz)
+        .filter(Quiz.id == body.quiz_id, Quiz.user_id == current_user.id)
+        .first()
+    )
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found.")
 
@@ -217,14 +238,16 @@ def submit_quiz(
 
     for i, (q, student_ans) in enumerate(zip(questions, answers)):
         result = _evaluate_answer(q, student_ans, excerpts)
-        per_question.append({
-            "index": i,
-            "question": q.get("question"),
-            "type": q.get("type"),
-            "student_answer": student_ans,
-            "correct_answer": q.get("correct_answer"),
-            **result,
-        })
+        per_question.append(
+            {
+                "index": i,
+                "question": q.get("question"),
+                "type": q.get("type"),
+                "student_answer": student_ans,
+                "correct_answer": q.get("correct_answer"),
+                **result,
+            }
+        )
         total_score += result.get("score", 0)
 
     final_score = round(total_score / len(questions)) if questions else 0
@@ -271,30 +294,39 @@ def quiz_history(
     result = []
     for q in quizzes:
         topic = db.query(Topic).filter(Topic.id == q.topic_id).first()
-        result.append({
-            "quiz_id": q.id,
-            "topic_id": q.topic_id,
-            "topic_name": topic.name if topic else "Unknown",
-            "score": q.score,
-            "difficulty": q.difficulty,
-            "completed_at": q.completed_at.isoformat() if q.completed_at else None,
-        })
+        result.append(
+            {
+                "quiz_id": q.id,
+                "topic_id": q.topic_id,
+                "topic_name": topic.name if topic else "Unknown",
+                "score": q.score,
+                "difficulty": q.difficulty,
+                "completed_at": q.completed_at.isoformat() if q.completed_at else None,
+            }
+        )
     return result
 
 
 def _update_streak(user: User, db: DBSession):
     from datetime import date
+
     today = date.today()
     last = user.streak_last_date
+
     if last is None:
+        # New user — start streak at 1
         user.streak_count = 1
-    elif (today - last).days > 1:
-        # Streak broken — reset to 1
-        user.streak_count = 1
-    elif last == today:
-        pass  # Already counted today — no change
     else:
-        # Consecutive day — increment
-        user.streak_count += 1
+        days_diff = (today - last).days
+        if days_diff == 0:
+            # Already counted today — no change (prevents double-increment)
+            pass
+        elif days_diff == 1:
+            # Consecutive day — increment streak
+            user.streak_count += 1
+        else:
+            # Gap > 1 day — streak broken, reset to 1
+            user.streak_count = 1
+
     user.streak_last_date = today
     db.commit()
