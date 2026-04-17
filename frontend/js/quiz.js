@@ -95,6 +95,7 @@ function renderQuestion() {
   else if (q.type==='ow') _renderOW(q,area);
   else if (q.type==='os') _renderOS(q,area);
   else if (q.type==='match') _renderMatch(q,area);
+  else if (q.type==='diagram') renderDiagramQuestion(q);
   area.style.animation='none'; requestAnimationFrame(()=>{ area.style.animation='slideUp .35s ease both'; });
 }
 
