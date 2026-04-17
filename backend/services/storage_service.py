@@ -5,12 +5,16 @@ Local mode: saves to backend/uploads/{user_id}/{filename}
 Azure mode: uploads to blob container, returns 1-hour SAS URL.
 """
 
+import io
 import shutil
 import uuid
 from pathlib import Path
 from typing import IO
 
 from backend.config import settings
+
+PDF_MAGIC = b"%PDF-"
+MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024  # 50MB, overridden by settings
 
 
 class StorageService:
@@ -37,12 +41,40 @@ class StorageService:
                 )
                 self._use_local = True
 
+    def validate_pdf(self, content: bytes) -> tuple[bool, str]:
+        """Validate PDF magic bytes and size. Returns (is_valid, error_message)."""
+        from backend.config import settings
+
+        max_bytes = settings.MAX_UPLOAD_MB * 1024 * 1024
+
+        # Check size first (cheaper check)
+        if len(content) > max_bytes:
+            return (
+                False,
+                f"File size {len(content) / 1024 / 1024:.1f}MB exceeds limit of {settings.MAX_UPLOAD_MB}MB",
+            )
+
+        # Check magic bytes
+        if not content.startswith(PDF_MAGIC):
+            return False, "File is not a valid PDF (missing %PDF- header)"
+
+        return True, ""
+
     def save(self, file_obj: IO[bytes], filename: str, user_id: str) -> str:
         """Save file and return a URL/path that can be stored in the DB."""
+        # Read content first for validation
+        content = file_obj.read()
+
+        # Validate PDF
+        is_valid, error_msg = self.validate_pdf(content)
+        if not is_valid:
+            raise ValueError(f"Upload rejected: {error_msg}")
+
+        # Reset file pointer and proceed
         safe_name = f"{uuid.uuid4().hex}_{Path(filename).name}"
         if self._use_local:
-            return self._save_local(file_obj, safe_name, user_id)
-        return self._save_azure(file_obj, safe_name, user_id)
+            return self._save_local(io.BytesIO(content), safe_name, user_id)
+        return self._save_azure(io.BytesIO(content), safe_name, user_id)
 
     def _save_local(self, file_obj: IO[bytes], filename: str, user_id: str) -> str:
         dest_dir = self._base / user_id
