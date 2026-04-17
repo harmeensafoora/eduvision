@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ev. &mdash; App</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,600;9..144,1,300;9..144,1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles/main.css"/>
+<link rel="stylesheet" href="styles/app.css"/>
+</head>
+<body>
+<div class="canvas" id="canvas">
+
+  <!-- ══ GLOBAL LOADER ══ -->
+  <div class="ev-loader-overlay" id="globalLoader" style="display:none">
+    <div class="ev-loader">ev.</div>
+    <div class="ev-loader-sub" id="loaderMsg">Loading&hellip;</div>
+    <div class="ev-loader-steps" id="loaderSteps"></div>
+  </div>
+
+  <!-- ══ ONBOARDING MODAL ══ -->
+  <div class="modal-overlay" id="onboardingModal" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <div style="text-align:center">
+          <div style="font-family:'Fraunces',serif;font-size:2.4rem;font-weight:600;letter-spacing:-.05em">ev.</div>
+          <div style="font-size:1rem;color:var(--muted);margin-top:.3rem">Let&rsquo;s set up your learning profile</div>
+        </div>
+        <div class="ob-progress" id="obProgress" style="margin-top:1.2rem">
+          <div class="ob-prog-dot done"></div>
+          <div class="ob-prog-dot"></div>
+          <div class="ob-prog-dot"></div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <!-- Step 1: Learner type -->
+        <div class="ob-step active" id="obStep1">
+          <div style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:400;margin-bottom:.4rem">How do you learn best?</div>
+          <div style="font-size:.88rem;color:var(--muted);margin-bottom:.2rem">Select all that apply &mdash; or skip if you&rsquo;re not sure yet.</div>
+          <div class="learner-tag-grid" id="learnerTags">
+            <div class="learner-tag-opt" data-v="adhd">ADHD</div>
+            <div class="learner-tag-opt" data-v="dyslexia">Dyslexia</div>
+            <div class="learner-tag-opt" data-v="autism">Autism Spectrum</div>
+            <div class="learner-tag-opt" data-v="visual">Visual Learner</div>
+            <div class="learner-tag-opt" data-v="auditory">Auditory Learner</div>
+            <div class="learner-tag-opt" data-v="verbal">Verbal Learner</div>
+            <div class="learner-tag-opt" data-v="reading">Reading / Writing</div>
+            <div class="learner-tag-opt" data-v="kinaesthetic">Kinaesthetic</div>
+            <div class="learner-tag-opt" data-v="non-native">Non-Native Speaker</div>
+            <div class="learner-tag-opt" data-v="dyscalculia">Dyscalculia</div>
+          </div>
+        </div>
+        <!-- Step 2: Language -->
+        <div class="ob-step" id="obStep2">
+          <div style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:400;margin-bottom:.8rem">Preferred language?</div>
+          <select class="select" id="langPref">
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="ar">Arabic</option>
+            <option value="ja">Japanese</option>
+            <option value="de">German</option>
+            <option value="pt">Portuguese</option>
+            <option value="ko">Korean</option>
+            <option value="zh">Mandarin</option>
+          </select>
+          <div style="margin-top:1rem;font-size:.82rem;color:var(--muted2);line-height:1.65">EduVision will summarise, quiz, and explain everything in this language. You can change it at any time.</div>
+        </div>
+        <!-- Step 3: Depth -->
+        <div class="ob-step" id="obStep3">
+          <div style="font-family:'Fraunces',serif;font-size:1.4rem;font-weight:400;margin-bottom:.8rem">How deep do you want to go?</div>
+          <div class="depth-card-grid" id="depthCards">
+            <div class="depth-card" data-v="exam" onclick="selectDepthCard(this)">
+              <div class="depth-card-icon">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              </div>
+              <div class="depth-card-title">Just the exam bits</div>
+              <div class="depth-card-desc">High-yield definitions and key points only</div>
+            </div>
+            <div class="depth-card sel" data-v="solid" onclick="selectDepthCard(this)">
+              <div class="depth-card-icon">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4l3 3"/></svg>
+              </div>
+              <div class="depth-card-title">Solid understanding</div>
+              <div class="depth-card-desc">Concepts, mechanisms, and practice</div>
+            </div>
+            <div class="depth-card" data-v="expert" onclick="selectDepthCard(this)">
+              <div class="depth-card-icon">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+              </div>
+              <div class="depth-card-title">Become an expert</div>
+              <div class="depth-card-desc">Research depth, edge cases, full mastery</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="skipOnboarding()">Skip for now</button>
+        <button class="btn" id="obBack" onclick="obPrev()" style="display:none">Back</button>
+        <button class="btn btn-dark" id="obNext" onclick="obNext()">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ USER DROPDOWN ══ -->
+  <div class="user-dropdown" id="userDropdown" style="display:none;position:fixed;top:62px;right:calc(50vw - 650px)">
+    <div class="user-dropdown-header">
+      <div class="ud-name" id="udName">User</div>
+      <div class="ud-email" id="udEmail">user@email.com</div>
+    </div>
+    <div class="ud-item" onclick="navigate('dashboard')">
+      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </div>
+    <div class="ud-item" onclick="closeDropdown()">
+      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profile
+    </div>
+    <div class="ud-item danger" onclick="logout()">
+      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Sign out
+    </div>
+  </div>
+
+  <!-- ══ AUTH VIEW ══ -->
+  <div id="authView" class="auth-view" style="display:none">
+    <div class="auth-card panel no-hover" style="padding:2.5rem">
+      <div class="auth-logo">ev.</div>
+      <div class="auth-tagline">Upload any PDF.<br/>Actually understand it.</div>
+      <button class="google-btn" onclick="googleLogin()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider">or</div>
+      <button class="btn btn-dark" style="width:100%;justify-content:center;padding:.85rem" onclick="demoLogin()">Try the demo &rarr;</button>
+      <div class="auth-note">By continuing, you agree to our Terms of Service and Privacy Policy.<br/>Your data is encrypted and never used for training without consent.</div>
+    </div>
+  </div>
+
+  <!-- ══ APP SHELL ══ -->
+  <div id="appShell" style="display:none">
+
+    <!-- NAV -->
+    <nav class="app-nav">
+      <div class="nav-logo" onclick="navigate('upload')">ev.</div>
+      <ul class="nav-links">
+        <li><a class="nav-link" data-view="upload" onclick="navigate('upload')">Upload</a></li>
+        <li><a class="nav-link" data-view="summary" onclick="navigate('summary')">Summary</a></li>
+        <li><a class="nav-link" data-view="roadmap" onclick="navigate('roadmap')">Roadmap</a></li>
+        <li><a class="nav-link" data-view="quiz" onclick="navigate('quiz')">Quiz</a></li>
+        <li><a class="nav-link" data-view="dashboard" onclick="navigate('dashboard')">Dashboard</a></li>
+      </ul>
+      <div class="nav-right" style="position:relative">
+        <button class="btn btn-yellow btn-sm" onclick="navigate('upload')">
+          <svg class="icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 4v16m-8-8h16"/></svg>
+          New
+        </button>
+        <div id="navAvatar" onclick="toggleDropdown()" style="cursor:pointer"></div>
+      </div>
+    </nav>
+
+    <!-- YELLOW MARQUEE BAND -->
+    <div class="mq yellow">
+      <div class="mq-track L" style="--d:36s">
+        <span class="mq-item">Upload any PDF</span><span class="mq-sep"></span>
+        <span class="mq-item">AI-powered summaries</span><span class="mq-sep"></span>
+        <span class="mq-item">Adaptive quizzes</span><span class="mq-sep"></span>
+        <span class="mq-item">Personal roadmap</span><span class="mq-sep"></span>
+        <span class="mq-item">Track mastery</span><span class="mq-sep"></span>
+        <span class="mq-item">Upload any PDF</span><span class="mq-sep"></span>
+        <span class="mq-item">AI-powered summaries</span><span class="mq-sep"></span>
+        <span class="mq-item">Adaptive quizzes</span><span class="mq-sep"></span>
+        <span class="mq-item">Personal roadmap</span><span class="mq-sep"></span>
+        <span class="mq-item">Track mastery</span><span class="mq-sep"></span>
+      </div>
+    </div>
+
+    <!-- UPLOAD VIEW -->
+    <div class="view" id="view-upload">
+      <div class="upload-view">
+        <div class="upload-hero">
+          <div style="font-family:'Fraunces',serif;font-size:clamp(1.8rem,3vw,2.6rem);font-weight:400;letter-spacing:-.04em;margin-bottom:.5rem">Upload your <em style="font-style:italic;font-weight:300">study materials.</em></div>
+          <div style="font-size:1rem;color:var(--muted)">Drop one or more PDFs. EduVision reads them all and tells you exactly what to study.</div>
+        </div>
+
+        <div class="drop-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="triggerFileInput()">
+          <input type="file" id="fileInput" accept=".pdf" multiple onchange="handleFiles(event)" style="display:none"/>
+          <div class="drop-icon">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#1c1917" stroke-width="1.8"><path stroke-linecap="round" d="M12 4v12m-4-4l4-4 4 4"/><path stroke-linecap="round" d="M4 20h16"/></svg>
+          </div>
+          <div class="drop-title">Drop your PDFs here</div>
+          <div class="drop-sub">or click to select files &middot; Multiple files supported</div>
+        </div>
+
+        <div class="file-list" id="fileList"></div>
+
+        <div id="uploadProgress" class="upload-progress-panel" style="display:none">
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:.8rem">Analysing your materials&hellip;</div>
+          <div class="prog-step" id="ps1"><div class="prog-icon spin">&#x2022;</div>Reading your PDFs&hellip;</div>
+          <div class="prog-step" id="ps2"><div class="prog-icon">&#x25CB;</div>Mapping topics across documents&hellip;</div>
+          <div class="prog-step" id="ps3"><div class="prog-icon">&#x25CB;</div>Scoring coverage per topic&hellip;</div>
+          <div class="prog-step" id="ps4"><div class="prog-icon">&#x25CB;</div>Building your learning roadmap&hellip;</div>
+          <div class="prog-step" id="ps5"><div class="prog-icon">&#x25CB;</div>Finalising recommendations&hellip;</div>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-dark btn-lg" id="analyseBtn" onclick="startAnalysis()" disabled>Analyse PDFs &rarr;</button>
+          <span style="font-size:.8rem;color:var(--muted2)" id="fileCountLabel"></span>
+        </div>
+        <div class="inline-error" id="uploadError" style="display:none;margin-top:.8rem"></div>
+
+        <!-- Past sessions -->
+        <div class="session-list" id="sessionList">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:.8rem">Recent Sessions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY VIEW -->
+    <div class="view" id="view-summary">
+      <div class="summary-layout">
+        <div class="topic-sidebar">
+          <div class="topic-sidebar-header">Topics</div>
+          <div id="topicList"></div>
+        </div>
+        <div class="summary-main" id="summaryMain">
+          <div id="summaryEmpty" class="empty-state">
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" opacity=".3"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+            <div class="empty-title">Select a topic</div>
+            <div class="empty-sub">Choose a topic from the sidebar to view its summary</div>
+          </div>
+          <div id="summaryContent" style="display:none">
+            <div class="depth-tabs" id="depthTabs">
+              <button class="depth-tab active" onclick="switchDepth('quick',this)">Quick</button>
+              <button class="depth-tab" onclick="switchDepth('structured',this)">Structured</button>
+              <button class="depth-tab" onclick="switchDepth('detailed',this)">Detailed</button>
+            </div>
+            <div class="lang-row" id="langRow"></div>
+            <div id="summaryBody" class="summary-content"></div>
+            <div class="summary-quiz-cta" id="summaryQuizCta">
+              <div>
+                <div style="font-weight:700;font-size:.9rem">Quiz yourself on this topic</div>
+                <div style="font-size:.78rem;color:var(--muted);margin-top:2px">Test what you just learned</div>
+              </div>
+              <button class="btn btn-dark btn-sm" onclick="quizFromSummary()">Take quiz &rarr;</button>
+            </div>
+          </div>
+        </div>
+        <div class="doc-panel">
+          <div class="doc-panel-header">Sources</div>
+          <div id="docPanelList"></div>
+          <div class="ev-insight" id="evInsight" style="display:none">
+            <span class="ev-insight-star">&#x2726;</span>
+            <span id="evInsightText"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROADMAP VIEW -->
+    <div class="view" id="view-roadmap">
+      <div class="roadmap-view">
+        <div class="roadmap-controls">
+          <div style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:400;letter-spacing:-.03em;margin-bottom:.3rem">Your Roadmap</div>
+          <div style="font-size:.85rem;color:var(--muted)">How deep do you want to go?</div>
+          <div class="rm-depth-tabs" id="rmDepthTabs">
+            <button class="rm-depth-tab" data-d="exam" onclick="setRoadmapDepth('exam',this)">
+              <div>Just the exam bits</div>
+              <div class="rm-depth-tab-desc">Key definitions &amp; high-yield points</div>
+            </button>
+            <button class="rm-depth-tab active" data-d="solid" onclick="setRoadmapDepth('solid',this)">
+              <div>Solid understanding</div>
+              <div class="rm-depth-tab-desc">Concepts, mechanisms &amp; problems</div>
+            </button>
+            <button class="rm-depth-tab" data-d="expert" onclick="setRoadmapDepth('expert',this)">
+              <div>Become an expert</div>
+              <div class="rm-depth-tab-desc">Research depth &amp; edge cases</div>
+            </button>
+          </div>
+          <div class="rm-goal-input">
+            <div class="rm-goal-label">Your learning goal (optional)</div>
+            <input class="input" id="goalInput" placeholder="e.g. Pass my biochemistry exam&hellip;" style="font-size:.85rem"/>
+            <button class="btn btn-sm" style="margin-top:.6rem;width:100%;justify-content:center" onclick="regenerateRoadmap()">Regenerate &rarr;</button>
+          </div>
+          <div class="rm-legend">
+            <div class="rm-legend-item"><div class="rm-legend-dot" style="background:var(--yellow-d);border:1.5px solid var(--ink)"></div>Done</div>
+            <div class="rm-legend-item"><div class="rm-legend-dot" style="background:var(--ink);box-shadow:0 0 0 3px var(--yellow)"></div>Now</div>
+            <div class="rm-legend-item"><div class="rm-legend-dot" style="background:#fff;border:1.5px solid var(--ink)"></div>Next</div>
+            <div class="rm-legend-item" style="opacity:.4"><div class="rm-legend-dot" style="background:#fff;border:1.5px solid #bbb"></div>Locked</div>
+          </div>
+        </div>
+        <div>
+          <div style="margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2)" id="rmTopicLabel"></div>
+            <span id="rmDepthBadge" style="background:var(--yellow);border-radius:999px;padding:2px 12px;font-size:.68rem;font-weight:700;border:1.5px solid var(--ink)">Solid understanding</span>
+          </div>
+          <div class="roadmap-track" id="roadmapTrack"></div>
+        </div>
+      </div>
+
+      <!-- Step drawer -->
+      <div class="step-drawer" id="stepDrawer">
+        <div class="step-drawer-header">
+          <div>
+            <div style="font-weight:700;font-size:.9rem" id="drawerTitle">Topic Detail</div>
+            <div style="font-size:.75rem;color:var(--muted2)" id="drawerSub"></div>
+          </div>
+          <button class="step-drawer-close" onclick="closeDrawer()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+          </button>
+        </div>
+        <div class="step-drawer-body">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:.6rem">PDF Section</div>
+          <div id="drawerExcerpt" style="font-size:.85rem;line-height:1.75;color:var(--muted);background:#fafaf9;border-radius:10px;padding:1rem;border:1px solid rgba(28,25,23,.07)"></div>
+          <div style="margin-top:1.4rem;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:.6rem">Optional Resources</div>
+          <div id="drawerResources"></div>
+          <button class="btn btn-yellow" style="width:100%;justify-content:center;margin-top:1.4rem" onclick="quizFromDrawer()">Take quiz on this topic &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ VIEW -->
+    <div class="view" id="view-quiz">
+      <div class="quiz-view">
+        <div class="quiz-step-indicator" id="quizStepIndicator"></div>
+
+        <!-- Setup -->
+        <div id="quizSetup">
+          <div style="font-family:'Fraunces',serif;font-size:clamp(1.6rem,2.5vw,2.2rem);font-weight:400;letter-spacing:-.04em;margin-bottom:.4rem">Set up your quiz.</div>
+          <div style="font-size:.92rem;color:var(--muted);margin-bottom:1.6rem">All questions generated from your uploaded materials.</div>
+
+          <div style="margin-bottom:1.2rem">
+            <div class="setup-label">Topic</div>
+            <select class="select" id="quizTopicSelect"></select>
+          </div>
+
+          <div class="setup-grid">
+            <div>
+              <div class="setup-label">Question types</div>
+              <div class="qt-multi" id="qtMulti">
+                <div class="qt-chip sel" data-v="mcq" onclick="toggleQT(this)">Multiple Choice</div>
+                <div class="qt-chip" data-v="tf" onclick="toggleQT(this)">True / False</div>
+                <div class="qt-chip" data-v="ow" onclick="toggleQT(this)">One Word</div>
+                <div class="qt-chip" data-v="os" onclick="toggleQT(this)">One Sentence</div>
+                <div class="qt-chip" data-v="match" onclick="toggleQT(this)">Match</div>
+                <div class="qt-chip" data-v="diagram" onclick="toggleQT(this)">Diagram</div>
+              </div>
+            </div>
+            <div>
+              <div class="setup-label">Difficulty</div>
+              <div class="diff-tabs">
+                <button class="diff-tab" data-d="easy" onclick="setDiff(this)">Easy</button>
+                <button class="diff-tab active" data-d="intermediate" onclick="setDiff(this)">Intermediate</button>
+                <button class="diff-tab" data-d="hard" onclick="setDiff(this)">Hard</button>
+              </div>
+            </div>
+            <div>
+              <div class="setup-label">Number of questions</div>
+              <div class="qcount-btns">
+                <button class="qcount-btn" data-n="5" onclick="setCount(this)">5</button>
+                <button class="qcount-btn active" data-n="10" onclick="setCount(this)">10</button>
+                <button class="qcount-btn" data-n="15" onclick="setCount(this)">15</button>
+                <button class="qcount-btn" data-n="20" onclick="setCount(this)">20</button>
+              </div>
+            </div>
+            <div>
+              <div class="setup-label">Language</div>
+              <select class="select" id="quizLangSelect">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="ar">Arabic</option>
+                <option value="ja">Japanese</option>
+                <option value="de">German</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:2rem">
+            <button class="btn btn-dark btn-lg" onclick="startQuiz()">Start Quiz &rarr;</button>
+          </div>
+          <div class="inline-error" id="quizSetupError">Please select at least one question type.</div>
+        </div>
+
+        <!-- Active quiz -->
+        <div id="quizActive" style="display:none">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quizProgressFill" style="width:10%"></div>
+          </div>
+          <div class="quiz-q-number" id="quizQNumber">Question 1 of 10</div>
+          <div class="quiz-question" id="quizQuestionText"></div>
+          <div id="quizAnswerArea"></div>
+          <div class="q-feedback" id="quizFeedback"></div>
+          <div class="quiz-next">
+            <button class="btn btn-dark" id="quizNextBtn" onclick="nextQuestion()" style="display:none">Next &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="quizResults" style="display:none;position:relative;overflow:hidden">
+          <div class="confetti-container" id="confettiContainer"></div>
+          <div class="quiz-results">
+            <div style="margin-bottom:1.5rem">
+              <div style="font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:.4rem">Your Score</div>
+              <div class="result-score" id="resultScore">0%</div>
+              <div class="result-label" id="resultLabel">Keep going &mdash; you&rsquo;re making progress.</div>
+            </div>
+            <div class="result-bars" id="resultBars"></div>
+            <div style="margin:1.8rem 0;border-top:1px solid rgba(28,25,23,.08)"></div>
+            <div id="badgeAwardWrap" class="badge-award" style="display:none">
+              <svg class="badge-star" viewBox="0 0 72 72">
+                <polygon points="36,4 43,25 66,25 48,39 55,61 36,47 17,61 24,39 6,25 29,25" fill="#fde047" stroke="#1c1917" stroke-width="2.5"/>
+              </svg>
+              <div style="font-weight:700;font-size:.95rem">Topic Mastered!</div>
+              <div style="font-size:.82rem;color:var(--muted)">You earned a badge for this topic</div>
+            </div>
+            <div style="display:flex;gap:.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap">
+              <button class="btn" onclick="retakeQuiz()">Retake quiz</button>
+              <button class="btn btn-dark" onclick="navigate('roadmap')">Go to roadmap &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div class="view" id="view-dashboard">
+      <div class="dashboard-view">
+
+        <div class="dash-header">
+          <div id="dashAvatarWrap"></div>
+          <div class="dash-user-info">
+            <div class="dash-name" id="dashName">Welcome back</div>
+            <div class="dash-learner-tags" id="dashLearnerTags"></div>
+          </div>
+          <div class="dash-streak">
+            <div class="dash-streak-n" id="dashStreak">0</div>
+            <div class="dash-streak-label">day streak</div>
+          </div>
+        </div>
+
+        <div class="dash-stats" id="dashStats">
+          <div class="stat-card">
+            <div class="stat-n" id="statTopics">&mdash;</div>
+            <div class="stat-label">Topics Mastered</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-n" id="statScore">&mdash;</div>
+            <div class="stat-label">Avg Quiz Score</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-n" id="statStreak">&mdash;</div>
+            <div class="stat-label">Day Streak</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-n" id="statPDFs">&mdash;</div>
+            <div class="stat-label">PDFs Analysed</div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="panel no-hover sw-panel">
+            <div style="font-weight:700;font-size:.9rem;margin-bottom:.2rem">Performance</div>
+            <div style="font-size:.78rem;color:var(--muted2)">Based on your quiz history</div>
+            <div class="sw-list" id="swStrengths"></div>
+            <div class="sw-list" id="swWeaknesses"></div>
+            <div class="dash-obs" id="dashObs" style="display:none"></div>
+          </div>
+
+          <div class="panel no-hover sw-panel">
+            <div style="font-weight:700;font-size:.9rem;margin-bottom:.2rem">Knowledge Map</div>
+            <div style="font-size:.78rem;color:var(--muted2);margin-bottom:.8rem">Click a topic to review</div>
+            <div class="concept-map" id="conceptMap"></div>
+            <div style="display:flex;gap:.75rem;margin-top:.8rem;font-size:.74rem;flex-wrap:wrap">
+              <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;border-radius:50%;background:var(--yellow-d);display:inline-block;border:1.5px solid var(--ink)"></span>Mastered</span>
+              <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;border:1.5px solid var(--ink)"></span>In progress</span>
+              <span style="display:flex;align-items:center;gap:.3rem"><span style="width:10px;height:10px;border-radius:50%;background:#f5f5f4;display:inline-block;border:1.5px solid var(--ink)"></span>Not started</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel no-hover badges-panel">
+          <div style="font-weight:700;font-size:.9rem">Badges</div>
+          <div style="font-size:.78rem;color:var(--muted2);margin-top:.2rem">Earn a star by getting 100% on a topic quiz</div>
+          <div class="badges-grid" id="badgesGrid"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /appShell -->
+
+</div><!-- /canvas -->
+
+<!-- Scripts — order matters: api first, then app (state/routing), then feature modules -->
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/upload.js"></script>
+<script src="js/summary.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/roadmap.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/diagram.js"></script>
+</body>
+</html>

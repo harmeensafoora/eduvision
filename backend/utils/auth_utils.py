@@ -89,4 +89,6 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise CREDENTIALS_EXCEPTION
+    if not user.is_active:
+        raise CREDENTIALS_EXCEPTION  # Deactivated accounts cannot access API
     return user

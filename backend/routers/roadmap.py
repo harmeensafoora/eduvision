@@ -4,6 +4,7 @@ Roadmap router.
 GET  /api/roadmap/{session_id}?depth=solid
 POST /api/roadmap/{session_id}/regenerate   body: {depth, goal}
 """
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,7 +22,9 @@ from backend.models.user import User
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
 
 
-def _build_roadmap(session_id: str, depth: str, goal: str | None, db: DBSession) -> list[RoadmapNode]:
+def _build_roadmap(
+    session_id: str, depth: str, goal: str | None, db: DBSession
+) -> list[RoadmapNode]:
     """Generate or regenerate roadmap nodes for a session."""
     topics = (
         db.query(Topic)
@@ -51,7 +54,10 @@ def _build_roadmap(session_id: str, depth: str, goal: str | None, db: DBSession)
         if topic is None:
             # Best-effort fuzzy match
             from difflib import get_close_matches
-            matches = get_close_matches(step_topic_name.lower(), name_to_topic.keys(), n=1, cutoff=0.5)
+
+            matches = get_close_matches(
+                step_topic_name.lower(), name_to_topic.keys(), n=1, cutoff=0.5
+            )
             topic = name_to_topic[matches[0]] if matches else topics[i % len(topics)]
 
         is_locked = step.get("is_locked", False)
@@ -61,6 +67,7 @@ def _build_roadmap(session_id: str, depth: str, goal: str | None, db: DBSession)
         pdf_section_refs = []
         if topic.best_pdf_id:
             from backend.models.pdf_model import PDF
+
             pdf = db.query(PDF).filter(PDF.id == topic.best_pdf_id).first()
             if pdf and pdf.chunks:
                 chunk = next(
@@ -68,7 +75,13 @@ def _build_roadmap(session_id: str, depth: str, goal: str | None, db: DBSession)
                     pdf.chunks[0] if pdf.chunks else None,
                 )
                 if chunk:
-                    pdf_section_refs = [{"pdf_id": topic.best_pdf_id, "page": chunk["page"], "excerpt": chunk["text"][:300]}]
+                    pdf_section_refs = [
+                        {
+                            "pdf_id": topic.best_pdf_id,
+                            "page": chunk["page"],
+                            "excerpt": chunk["text"][:300],
+                        }
+                    ]
 
         node = RoadmapNode(
             id=str(uuid.uuid4()),
@@ -77,7 +90,9 @@ def _build_roadmap(session_id: str, depth: str, goal: str | None, db: DBSession)
             depth_level=depth,
             order_index=i,
             pdf_section_refs=pdf_section_refs,
-            external_resources=step.get("external_resources", []) if depth == "expert" else [],
+            external_resources=step.get("external_resources", [])
+            if depth == "expert"
+            else [],
             is_locked=is_locked,
             is_completed=False,
             status=status,
@@ -110,16 +125,20 @@ def _nodes_to_out(nodes: list[RoadmapNode], db: DBSession) -> list[RoadmapNodeOu
     return result
 
 
-@router.get("/{session_id}", response_model=RoadmapOut, summary="Get or generate roadmap")
+@router.get(
+    "/{session_id}", response_model=RoadmapOut, summary="Get or generate roadmap"
+)
 def get_roadmap(
     session_id: str,
     depth: str = Query("solid", regex="^(exam|solid|expert)$"),
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    session = db.query(Session).filter(
-        Session.id == session_id, Session.user_id == current_user.id
-    ).first()
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
 
@@ -140,16 +159,20 @@ def get_roadmap(
     )
 
 
-@router.post("/{session_id}/regenerate", response_model=RoadmapOut, summary="Regenerate roadmap")
+@router.post(
+    "/{session_id}/regenerate", response_model=RoadmapOut, summary="Regenerate roadmap"
+)
 def regenerate_roadmap(
     session_id: str,
     body: RegenerateRoadmapRequest,
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    session = db.query(Session).filter(
-        Session.id == session_id, Session.user_id == current_user.id
-    ).first()
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
 
@@ -163,16 +186,29 @@ def regenerate_roadmap(
     )
 
 
-@router.patch("/{session_id}/node/{node_id}/complete", summary="Mark roadmap node as complete")
+@router.patch(
+    "/{session_id}/node/{node_id}/complete", summary="Mark roadmap node as complete"
+)
 def complete_node(
     session_id: str,
     node_id: str,
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
-    node = db.query(RoadmapNode).filter(
-        RoadmapNode.id == node_id, RoadmapNode.session_id == session_id
-    ).first()
+    # Verify the session belongs to the authenticated user
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    node = (
+        db.query(RoadmapNode)
+        .filter(RoadmapNode.id == node_id, RoadmapNode.session_id == session_id)
+        .first()
+    )
     if not node:
         raise HTTPException(status_code=404, detail="Node not found.")
     node.is_completed = True
