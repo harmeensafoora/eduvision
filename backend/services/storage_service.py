@@ -4,6 +4,7 @@ Local mode: saves to backend/uploads/{user_id}/{filename}
              serves via /static/uploads/...
 Azure mode: uploads to blob container, returns 1-hour SAS URL.
 """
+
 import shutil
 import uuid
 from pathlib import Path
@@ -23,6 +24,7 @@ class StorageService:
                     generate_blob_sas,
                     BlobSasPermissions,
                 )
+
                 self._blob_client = BlobServiceClient.from_connection_string(
                     settings.AZURE_STORAGE_CONNECTION_STRING
                 )
@@ -30,7 +32,9 @@ class StorageService:
                 self._generate_blob_sas = generate_blob_sas
                 self._BlobSasPermissions = BlobSasPermissions
             except Exception as exc:
-                print(f"[storage] Azure init failed ({exc}), falling back to local storage")
+                print(
+                    f"[storage] Azure init failed ({exc}), falling back to local storage"
+                )
                 self._use_local = True
 
     def save(self, file_obj: IO[bytes], filename: str, user_id: str) -> str:
@@ -49,23 +53,35 @@ class StorageService:
         return f"/static/uploads/{user_id}/{filename}"
 
     def _save_azure(self, file_obj: IO[bytes], filename: str, user_id: str) -> str:
-        from datetime import datetime, timedelta, timezone
-
         blob_name = f"{user_id}/{filename}"
         container_client = self._blob_client.get_container_client(self._container)
         container_client.upload_blob(blob_name, file_obj, overwrite=True)
-        # Generate 1-hour SAS URL
+        # Return blob path only (SAS URL generated on-demand)
+        return blob_name
+
+    def get_read_url(self, blob_path: str) -> str:
+        """Generate a read URL for a stored blob. For local: return static URL.
+        For Azure: generate fresh SAS URL (on-demand)."""
+        if self._use_local:
+            # Local: return static URL directly
+            return f"/static/uploads/{blob_path}"
+        return self._generate_fresh_sas_url(blob_path)
+
+    def _generate_fresh_sas_url(self, blob_path: str) -> str:
+        """Generate a fresh SAS URL for Azure blob access."""
+        from datetime import datetime, timedelta, timezone
+
         account_name = self._blob_client.account_name
         account_key = self._blob_client.credential.account_key
         sas = self._generate_blob_sas(
             account_name=account_name,
             container_name=self._container,
-            blob_name=blob_name,
+            blob_name=blob_path,
             account_key=account_key,
             permission=self._BlobSasPermissions(read=True),
             expiry=datetime.now(timezone.utc) + timedelta(hours=1),
         )
-        return f"https://{account_name}.blob.core.windows.net/{self._container}/{blob_name}?{sas}"
+        return f"https://{account_name}.blob.core.windows.net/{self._container}/{blob_path}?{sas}"
 
     def local_path(self, url: str) -> Path:
         """Convert a /static/uploads/... URL back to an absolute filesystem path."""
