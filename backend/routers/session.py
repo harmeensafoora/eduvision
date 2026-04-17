@@ -211,9 +211,12 @@ async def upload_pdfs(
         content = await upload.read()
         import io
 
-        url = storage_service.save(
-            io.BytesIO(content), upload.filename or f"{pdf_id}.pdf", current_user.id
-        )
+        try:
+            url = storage_service.save(
+                io.BytesIO(content), upload.filename or f"{pdf_id}.pdf", current_user.id
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
         pdf = PDF(
             id=pdf_id,
             session_id=session_id,
