@@ -28,8 +28,17 @@ def create_tables():
     """Called on application startup to create all tables."""
     # Import all models so Base knows about them before create_all
     from backend.models import (  # noqa: F401
-        user, session_model, pdf_model, topic,
-        summary, quiz, badge, roadmap, learner_profile
+        user,
+        session_model,
+        pdf_model,
+        topic,
+        summary,
+        quiz,
+        badge,
+        roadmap,
+        learner_profile,
+        question_state,
     )
+
     Base.metadata.create_all(bind=engine)
     print(f"[db] Tables ready — {'SQLite' if settings.USE_SQLITE else 'PostgreSQL'}")

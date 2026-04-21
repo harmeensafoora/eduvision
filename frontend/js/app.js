@@ -57,6 +57,37 @@ function showError(id, msg) {
   setTimeout(() => { el.classList.remove('show'); el.style.display = 'none'; }, 4000);
 }
 
+// ── Learner Profile ───────────────────────────────────────────────────────────────
+function applyLearnerProfile(types) {
+  document.body.classList.remove('profile-dyslexic', 'profile-autistic', 'profile-visual', 'profile-verbal');
+  if (!types || !types.length) return;
+  types.forEach(function(t) {
+    if (t === 'dyslexia') document.body.classList.add('profile-dyslexic');
+    if (t === 'autism' || t === 'autistic-friendly') document.body.classList.add('profile-autistic');
+    if (t === 'visual') document.body.classList.add('profile-visual');
+    if (t === 'verbal' || t === 'auditory') document.body.classList.add('profile-verbal');
+  });
+}
+
+// ── TTS (Text-to-Speech) ────────────────────────────────────────────────────
+var TTS = { speaking: false, synth: null };
+function initTTS() {
+  if (typeof window.speechSynthesis === 'undefined') return false;
+  TTS.synth = window.speechSynthesis;
+  return true;
+}
+function speakText(text, lang) {
+  if (!TTS.synth && !initTTS()) return;
+  TTS.synth.cancel();
+  var utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang || 'en-US';
+  utter.rate = 0.9;
+  TTS.synth.speak(utter);
+}
+function stopSpeaking() {
+  if (TTS.synth) TTS.synth.cancel();
+}
+
 // ── SVG helper ────────────────────────────────────────────────────────────────
 function svgIcon(path, size) {
   size = size || 18;

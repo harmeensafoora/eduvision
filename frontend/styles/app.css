@@ -1055,3 +1055,156 @@
   pointer-events: none;
   background: #f5f5f4;
 }
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS — Phase 03
+   View Transitions, Quiz Feedback, Badges, Stats
+   ═══════════════════════════════════════════════════════ */
+
+/* View fade/slide transitions */
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes viewFadeOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-20px); }
+}
+
+.view {
+  animation: viewFadeIn 300ms ease-out forwards;
+}
+
+/* Quiz feedback — correct answer */
+.quiz-correct {
+  animation: quizPop 0.4s ease;
+  background: #dcfce7 !important;
+  box-shadow: 0 0 0 3px #86efac !important;
+}
+@keyframes quizPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Quiz feedback — wrong answer */
+.quiz-wrong {
+  animation: quizShake 0.4s ease;
+  background: #fecaca !important;
+  box-shadow: 0 0 0 3px #fca5a5 !important;
+}
+@keyframes quizShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(8px); }
+}
+
+/* Badge drop-in cascade */
+@keyframes badgeDropIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.badge-item {
+  animation: badgeDropIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+.badge-item:nth-child(1) { animation-delay: 0ms; }
+.badge-item:nth-child(2) { animation-delay: 50ms; }
+.badge-item:nth-child(3) { animation-delay: 100ms; }
+.badge-item:nth-child(4) { animation-delay: 150ms; }
+.badge-item:nth-child(5) { animation-delay: 200ms; }
+.badge-item:nth-child(6) { animation-delay: 250ms; }
+
+/* Dashboard stat counter */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stat-value {
+  animation: countUp 0.6s ease-out forwards;
+}
+
+/* Upload progress step pulse */
+@keyframes stepPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.step-current {
+  animation: stepPulse 1s ease infinite;
+}
+.step-complete .ev-step-dot {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+/* prefers-reduced-motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LEARNER PROFILES — Phase 04
+   Dyslexic, Low-stimulation, Visual, Verbal CSS
+   ═══════════════════════════════════════════════════════ */
+
+/* Dyslexic profile */
+body.profile-dyslexic {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.15em;
+  word-spacing: 0.2em;
+  line-height: 1.8;
+}
+body.profile-dyslexic .view,
+body.profile-dyslexic .panel,
+body.profile-dyslexic .card {
+  max-width: 45ch;
+}
+body.profile-dyslexic {
+  background: #FDF6E3 !important;
+}
+
+/* Autistic/low-stimulation profile */
+body.profile-autistic *,
+body.profile-autistic *::before,
+body.profile-autistic *::after {
+  animation: none !important;
+  transition: none !important;
+}
+body.profile-autistic {
+  filter: saturate(0.8);
+}
+body.profile-autistic button,
+body.profile-autistic input,
+body.profile-autistic select {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Visual learner profile */
+body.profile-visual .summary-content {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+body.profile-visual .summary-text {
+  flex: 1;
+}
+body.profile-visual .concept-map {
+  flex: 0 0 300px;
+}
+
+/* Verbal learner profile */
+body.profile-verbal .summary-controls,
+body.profile-verbal .quiz-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+body.profile-verbal button[data-tts] {
+  display: inline-flex !important;
+}
