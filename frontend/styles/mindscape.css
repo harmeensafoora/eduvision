@@ -1,0 +1,641 @@
+/* ═══════════════════════════════════════════════════════
+   MINDSCAPE — Learner Visual Gallery + Multi-Panel
+   EduVision adaptive visual system
+═══════════════════════════════════════════════════════ */
+
+/* ── MINDSCAPE VIEW ──────────────────────────────────── */
+.mindscape-view {
+  padding: 2.5rem 3rem 4rem;
+  min-height: calc(100vh - 130px);
+}
+
+.mindscape-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.mindscape-hero-text h2 {
+  font-family: "Fraunces", serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 400;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+  margin-bottom: .5rem;
+}
+
+.mindscape-hero-text p {
+  font-size: .92rem;
+  color: var(--muted);
+  max-width: 440px;
+  line-height: 1.7;
+}
+
+.mindscape-controls {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ms-filter-chip {
+  padding: .38rem 1rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(28,25,23,.15);
+  background: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--muted2);
+}
+
+.ms-filter-chip:hover { border-color: var(--ink); color: var(--ink); }
+.ms-filter-chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* ── VISUAL GALLERY GRID ─────────────────────────────── */
+.visual-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+
+.visual-gallery.view-list {
+  grid-template-columns: 1fr;
+}
+
+.visual-gallery.view-2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* ── VISUAL CARD ─────────────────────────────────────── */
+.visual-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1.5px solid rgba(28,25,23,.08);
+  overflow: hidden;
+  box-shadow: var(--sh-card);
+  transition: all .25s var(--ease-out);
+  cursor: pointer;
+  position: relative;
+}
+
+.visual-card:hover {
+  box-shadow: var(--sh-float);
+  transform: translateY(-4px);
+  border-color: rgba(28,25,23,.15);
+}
+
+.visual-card-canvas {
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.visual-card-canvas svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.visual-card-body {
+  padding: 1.2rem 1.4rem 1.4rem;
+}
+
+.visual-card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: .5rem;
+}
+
+.visual-card-title {
+  font-family: "Fraunces", serif;
+  font-weight: 400;
+  font-size: 1.15rem;
+  letter-spacing: -.02em;
+  margin-bottom: .3rem;
+  color: var(--ink);
+}
+
+.visual-card-sub {
+  font-size: .8rem;
+  color: var(--muted2);
+  line-height: 1.6;
+}
+
+.visual-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .8rem 1.4rem;
+  border-top: 1px solid rgba(28,25,23,.06);
+  background: #fafaf9;
+}
+
+.visual-learner-badge {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .22rem .7rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(28,25,23,.12);
+  background: #fff;
+}
+
+/* ── ANIMATION CANVASES ──────────────────────────────── */
+
+/* VISUAL learner — concept map */
+.anim-visual { background: linear-gradient(135deg, #fef9ee 0%, #fff8e7 100%); }
+
+/* ADHD — kinetic chunked */
+.anim-adhd { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
+
+/* DYSLEXIA — calm structured */
+.anim-dyslexia { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+
+/* AUTISM — grid predictable */
+.anim-autism { background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%); }
+
+/* AUDITORY — waveform */
+.anim-auditory { background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); }
+
+/* VERBAL — typography */
+.anim-verbal { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
+
+/* KINAESTHETIC — interactive */
+.anim-kinaesthetic { background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%); }
+
+/* NON-NATIVE — globe/language */
+.anim-nonnative { background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); }
+
+/* READING/WRITING — notebook */
+.anim-readwrite { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); }
+
+/* DYSCALCULIA — icon-based */
+.anim-dyscalculia { background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); }
+
+/* Topic-based canvases */
+.anim-science { background: linear-gradient(135deg, #ecfeff 0%, #a5f3fc 100%); }
+.anim-biology { background: linear-gradient(135deg, #f0fdf4 0%, #86efac 100%); }
+.anim-physics { background: linear-gradient(135deg, #eff6ff 0%, #93c5fd 100%); }
+.anim-math { background: linear-gradient(135deg, #faf5ff 0%, #d8b4fe 100%); }
+.anim-cs { background: linear-gradient(135deg, #f0fdf4 0%, #6ee7b7 100%); }
+.anim-history { background: linear-gradient(135deg, #fffbeb 0%, #fcd34d 100%); }
+.anim-default { background: linear-gradient(135deg, #fef9ee 0%, #fef08a 100%); }
+
+/* ── SVG ANIMATIONS ──────────────────────────────────── */
+
+/* Floating nodes (concept map) */
+@keyframes floatNode {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes pulseNode {
+  0%,100% { r: 8; opacity: 1; }
+  50% { r: 10; opacity: .8; }
+}
+@keyframes drawLine {
+  from { stroke-dashoffset: 200; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes rotateMolecule {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes dnaHelix {
+  from { transform: translateY(0); }
+  to { transform: translateY(-40px); }
+}
+@keyframes wavePulse {
+  0%,100% { d: path("M0,50 Q20,30 40,50 Q60,70 80,50 Q100,30 120,50 Q140,70 160,50"); }
+  50% { d: path("M0,50 Q20,70 40,50 Q60,30 80,50 Q100,70 120,50 Q140,30 160,50"); }
+}
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+}
+@keyframes gridFade {
+  0%,100% { opacity: .3; }
+  50% { opacity: 1; }
+}
+@keyframes bounce {
+  0%,100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-12px) scale(1.1); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes linesDraw {
+  from { stroke-dashoffset: 500; opacity: 0; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes globeSpin {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+@keyframes noteWrite {
+  from { stroke-dashoffset: 300; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes iconPop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes shimmerBg {
+  0% { opacity: .4; }
+  50% { opacity: 1; }
+  100% { opacity: .4; }
+}
+
+/* ── MULTI-PANEL LAYOUT ──────────────────────────────── */
+.multi-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .38rem .9rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(28,25,23,.15);
+  background: #fff;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--muted2);
+}
+.multi-panel-toggle:hover { border-color: var(--ink); color: var(--ink); }
+.multi-panel-toggle.active { background: var(--yellow); border-color: var(--ink); color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+
+/* Split panel wrapper */
+.split-panel-container {
+  display: flex;
+  gap: 0;
+  height: calc(100vh - 130px);
+  overflow: hidden;
+}
+
+.split-panel-primary {
+  flex: 1;
+  overflow-y: auto;
+  border-right: 1.5px solid rgba(28,25,23,.08);
+  min-width: 0;
+}
+
+.split-panel-secondary {
+  width: 420px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: #fafaf9;
+  transition: width .3s var(--ease-out);
+}
+
+.split-panel-secondary.collapsed { width: 0; overflow: hidden; }
+
+.split-panel-handle {
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.split-panel-handle:hover { background: var(--yellow-d); }
+
+/* Mindscape mini (inside secondary panel) */
+.mindscape-mini {
+  padding: 1.5rem;
+}
+.mindscape-mini-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.mindscape-mini-title {
+  font-family: "Fraunces", serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: -.03em;
+}
+.visual-mini-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1.5px solid rgba(28,25,23,.08);
+  overflow: hidden;
+  margin-bottom: .85rem;
+  box-shadow: 0 2px 8px rgba(28,25,23,.05);
+  cursor: pointer;
+  transition: all .2s;
+}
+.visual-mini-card:hover { box-shadow: var(--sh-card); transform: translateY(-2px); }
+.visual-mini-canvas { height: 120px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.visual-mini-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.visual-mini-body { padding: .75rem 1rem; }
+.visual-mini-title { font-size: .85rem; font-weight: 700; margin-bottom: .15rem; }
+.visual-mini-sub { font-size: .72rem; color: var(--muted2); }
+
+/* ── LEARNER TYPE SECTION (landing page) ─────────────── */
+.learner-showcase {
+  padding: 5rem 4rem;
+  background: var(--bg);
+  border-top: 1.5px solid var(--ink);
+}
+
+.learner-showcase-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.learner-showcase-header .ls-label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: .8rem;
+}
+
+.learner-showcase-header h2 {
+  font-family: "Fraunces", serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  letter-spacing: -.04em;
+  line-height: 1.08;
+}
+
+.learner-showcase-header h2 em {
+  font-style: italic;
+  font-weight: 300;
+}
+
+.learner-showcase-header p {
+  margin-top: .8rem;
+  font-size: 1rem;
+  color: var(--muted);
+  max-width: 500px;
+  margin-inline: auto;
+  line-height: 1.65;
+}
+
+.learner-type-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1100px) { .learner-type-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px) { .learner-type-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.learner-type-card {
+  border-radius: 18px;
+  border: 1.5px solid rgba(28,25,23,.1);
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--sh-card);
+  transition: all .25s var(--ease-out);
+  cursor: default;
+}
+
+.learner-type-card:hover {
+  transform: translateY(-4px) rotate(.5deg);
+  box-shadow: var(--sh-float);
+  border-color: var(--ink);
+}
+
+.lt-canvas {
+  height: 140px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lt-canvas svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lt-body {
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1.5px solid rgba(28,25,23,.07);
+}
+
+.lt-name {
+  font-weight: 700;
+  font-size: .88rem;
+  margin-bottom: .25rem;
+}
+
+.lt-desc {
+  font-size: .74rem;
+  color: var(--muted2);
+  line-height: 1.55;
+}
+
+/* ── LEARNER TYPE VISUAL MODES (app-wide) ───────────────
+   Applied to body via applyLearnerProfile()
+──────────────────────────────────────────────────────── */
+
+/* ADHD mode — high contrast labels, chunked spacing, progress dots */
+body.mode-adhd .summary-content p,
+body.mode-adhd .visual-card-body { padding-bottom: 1.6rem; }
+body.mode-adhd .visual-card-canvas { height: 220px; }
+body.mode-adhd .panel-body { gap: 1.2rem; }
+
+/* DYSLEXIA mode — increased letter/line spacing, larger base font */
+body.mode-dyslexia { letter-spacing: .04em; line-height: 1.9; }
+body.mode-dyslexia .visual-card-sub,
+body.mode-dyslexia .visual-card-title { letter-spacing: .06em; }
+body.mode-dyslexia .visual-gallery { gap: 1.8rem; }
+
+/* AUTISM mode — extra structure, subdued palette, remove hover transforms */
+body.mode-autism .visual-card:hover { transform: none; }
+body.mode-autism .visual-gallery { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+/* VISUAL mode — larger canvas, richer colours */
+body.mode-visual .visual-card-canvas { height: 240px; }
+body.mode-visual .visual-gallery { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+/* AUDITORY mode — waveform decoration on cards */
+body.mode-auditory .visual-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--yellow-d), var(--accent));
+  background-size: 200%;
+  animation: shimmer 2s infinite;
+}
+
+/* VERBAL mode — more text space */
+body.mode-verbal .visual-card-canvas { height: 140px; }
+body.mode-verbal .visual-card-body { padding: 1.4rem 1.4rem 1.6rem; }
+
+/* KINAESTHETIC mode — lift-on-hover is bolder */
+body.mode-kinaesthetic .visual-card:hover { transform: translateY(-8px) scale(1.01); }
+
+/* NON-NATIVE mode — subtle language indicator */
+body.mode-nonnative .visual-card-tag::before {
+  content: '🌐 ';
+}
+
+/* READING/WRITING mode — notebook lines on card body */
+body.mode-readwrite .visual-card-body {
+  background: repeating-linear-gradient(transparent, transparent 27px, rgba(99,102,241,.08) 28px);
+}
+
+/* DYSCALCULIA mode — no percentage numbers shown raw */
+body.mode-dyscalculia .stat-n { font-size: 0; }
+body.mode-dyscalculia .stat-n::after {
+  content: attr(data-icon);
+  font-size: 1.6rem;
+  display: block;
+}
+
+/* ── EXPANDED VISUAL MODAL ───────────────────────────── */
+.visual-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(28,25,23,.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn .2s ease;
+}
+
+.visual-modal {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: var(--sh-float);
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: springIn .35s cubic-bezier(.34,1.56,.64,1);
+}
+
+.visual-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem 1.8rem;
+  border-bottom: 1px solid rgba(28,25,23,.07);
+}
+
+.visual-modal-canvas {
+  height: 320px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.visual-modal-canvas svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.visual-modal-body {
+  padding: 1.6rem 1.8rem;
+  overflow-y: auto;
+}
+
+.visual-modal-close {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(28,25,23,.15);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+.visual-modal-close:hover { background: #fee2e2; border-color: var(--red); }
+
+/* ── EMPTY STATE ─────────────────────────────────────── */
+.mindscape-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  text-align: center;
+  gap: 1rem;
+  color: var(--muted2);
+}
+
+.mindscape-empty svg { opacity: .25; }
+.mindscape-empty-title { font-family: "Fraunces", serif; font-size: 1.4rem; font-weight: 400; color: var(--muted); }
+.mindscape-empty-sub { font-size: .85rem; max-width: 320px; line-height: 1.65; }
+
+/* ── VIEW TOGGLE BUTTONS ─────────────────────────────── */
+.view-mode-btns {
+  display: flex;
+  gap: .25rem;
+  border: 1.5px solid rgba(28,25,23,.12);
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 2px;
+  background: #fafaf9;
+}
+.view-mode-btn {
+  width: 32px; height: 28px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+  color: var(--muted2);
+}
+.view-mode-btn.active { background: var(--ink); color: #fff; }
+.view-mode-btn:hover:not(.active) { background: rgba(28,25,23,.06); }
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mindscape-view { padding: 1.5rem 1.2rem 3rem; }
+  .visual-gallery { grid-template-columns: 1fr; }
+  .split-panel-secondary { width: 100%; }
+  .split-panel-container { flex-direction: column; }
+  .learner-showcase { padding: 3rem 1.5rem; }
+  .learner-type-grid { grid-template-columns: repeat(2, 1fr); }
+}
