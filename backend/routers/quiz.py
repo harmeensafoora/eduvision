@@ -1,9 +1,10 @@
 """
 Quiz router.
 
-POST /api/quiz/generate    body: GenerateQuizRequest → questions
-POST /api/quiz/submit      body: SubmitQuizRequest   → scored results
-GET  /api/quiz/history     user's quiz history
+POST /api/quiz/generate              body: GenerateQuizRequest → questions
+POST /api/quiz/submit                body: SubmitQuizRequest   → scored results
+GET  /api/quiz/history               user's quiz history
+GET  /api/quiz/wrong-answers/{topic_id}  questions the user got wrong (for revision)
 """
 
 import difflib
@@ -51,7 +52,6 @@ def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
     explanation = q.get("explanation", "")
 
     if qtype in ("mcq", "tf"):
-        # Exact match
         is_correct = str(student_answer).strip().lower() == str(correct).strip().lower()
         return {
             "is_correct": is_correct,
@@ -62,13 +62,11 @@ def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
         }
 
     if qtype == "ow":
-        # Fuzzy match first
         ratio = difflib.SequenceMatcher(
             None, str(correct).lower(), str(student_answer).lower()
         ).ratio()
         if ratio > 0.85:
             return {"is_correct": True, "score": 100, "feedback": explanation}
-        # Semantic check via GPT
         try:
             result = ai_service.evaluate_open_answer(
                 q.get("question", ""), correct, str(student_answer), excerpts[:500]
@@ -96,7 +94,6 @@ def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
             }
 
     if qtype == "match":
-        # student_answer expected as list of [left, right] pairs
         pairs = q.get("pairs", [])
         correct_map = {str(p[0]).lower(): str(p[1]).lower() for p in pairs}
         student_map = {}
@@ -138,6 +135,44 @@ def generate_quiz(
     if not session:
         raise HTTPException(status_code=403, detail="Not your session.")
 
+    # ── Revision mode: pull questions the user previously got wrong ────────────
+    if body.mode == "revision":
+        wrong_questions = _get_wrong_questions(current_user.id, topic.id, db)
+        if not wrong_questions:
+            raise HTTPException(
+                status_code=404,
+                detail="No wrong answers found for this topic yet. Take a normal quiz first!",
+            )
+        # Sample up to `count` wrong questions (prefer most recent mistakes)
+        selected = wrong_questions[: body.count]
+        for q in selected:
+            q["hash"] = ai_service.question_hash(topic.id, q.get("question", ""))
+
+        quiz = Quiz(
+            id=str(uuid.uuid4()),
+            user_id=current_user.id,
+            topic_id=topic.id,
+            session_id=body.session_id,
+            question_types=list({q.get("type", "mcq") for q in selected}),
+            difficulty=body.difficulty,
+            language=body.lang,
+            questions=selected,
+            question_hashes=[q["hash"] for q in selected],
+        )
+        db.add(quiz)
+        db.commit()
+        db.refresh(quiz)
+
+        return {
+            "quiz_id": quiz.id,
+            "topic_id": topic.id,
+            "topic_name": topic.name,
+            "questions": selected,
+            "count": len(selected),
+            "mode": "revision",
+        }
+
+    # ── Normal mode ────────────────────────────────────────────────────────────
     excerpts = _get_topic_excerpts(topic, db)
     if not excerpts:
         raise HTTPException(
@@ -145,18 +180,23 @@ def generate_quiz(
             detail="No content found for this topic. Ensure PDFs have been processed.",
         )
 
-    # Deduplication: fetch previous question hashes for this user + topic
-    prev_quizzes = (
+    # Full deduplication: collect ALL previous questions for this user + topic
+    all_prev_quizzes = (
         db.query(Quiz)
         .filter(Quiz.user_id == current_user.id, Quiz.topic_id == topic.id)
         .order_by(Quiz.created_at.desc())
-        .limit(5)
         .all()
     )
     prev_questions: list[str] = []
-    for pq in prev_quizzes:
-        for q in pq.questions or []:
+    seen_hashes: set[str] = set()
+    for pq in all_prev_quizzes:
+        for h in (pq.question_hashes or []):
+            seen_hashes.add(h)
+        for q in (pq.questions or []):
             prev_questions.append(q.get("question", ""))
+
+    # If the user has exhausted the question pool (seen many), let the AI know it's OK to vary
+    exhausted = len(seen_hashes) >= 40
 
     questions = ai_service.generate_quiz(
         topic_name=topic.name,
@@ -165,7 +205,7 @@ def generate_quiz(
         types=body.types,
         difficulty=body.difficulty,
         lang=body.lang,
-        previous_questions=prev_questions,
+        previous_questions=prev_questions if not exhausted else [],
     )
 
     if not questions:
@@ -173,7 +213,6 @@ def generate_quiz(
             status_code=500, detail="Quiz generation failed. Check AI configuration."
         )
 
-    # Add source chunk index and hash
     for q in questions:
         q["hash"] = ai_service.question_hash(topic.id, q.get("question", ""))
 
@@ -198,6 +237,7 @@ def generate_quiz(
         "topic_name": topic.name,
         "questions": questions,
         "count": len(questions),
+        "mode": "normal",
     }
 
 
@@ -229,7 +269,6 @@ def submit_quiz(
             detail=f"Expected {len(questions)} answers, got {len(answers)}.",
         )
 
-    # Get excerpts for open-answer evaluation
     topic = db.query(Topic).filter(Topic.id == quiz.topic_id).first()
     excerpts = _get_topic_excerpts(topic, db) if topic else ""
 
@@ -243,6 +282,8 @@ def submit_quiz(
                 "index": i,
                 "question": q.get("question"),
                 "type": q.get("type"),
+                "options": q.get("options", []),
+                "pairs": q.get("pairs", []),
                 "student_answer": student_ans,
                 "correct_answer": q.get("correct_answer"),
                 **result,
@@ -252,7 +293,6 @@ def submit_quiz(
 
     final_score = round(total_score / len(questions)) if questions else 0
 
-    # Categorise
     mastered = [quiz.topic_id] if final_score >= 80 else []
     needs_work = [quiz.topic_id] if final_score < 50 else []
     light_revision = [quiz.topic_id] if 50 <= final_score < 80 else []
@@ -260,73 +300,10 @@ def submit_quiz(
     quiz.answers = answers
     quiz.score = final_score
     quiz.topic_scores = {quiz.topic_id: final_score}
+    quiz.per_question_results = per_question   # persist for revision mode
     quiz.completed_at = datetime.now(timezone.utc)
     db.commit()
 
-    # Update user streak
     _update_streak(current_user, db)
 
-    return QuizResultOut(
-        quiz_id=quiz.id,
-        score=final_score,
-        topic_scores={quiz.topic_id: final_score},
-        per_question=per_question,
-        mastered_topics=mastered,
-        needs_work=needs_work,
-        light_revision=light_revision,
-        badge_awarded=False,  # badge award happens via separate endpoint
-    )
-
-
-@router.get("/history", summary="User quiz history")
-def quiz_history(
-    limit: int = 20,
-    current_user: User = Depends(get_current_user),
-    db: DBSession = Depends(get_db),
-):
-    quizzes = (
-        db.query(Quiz)
-        .filter(Quiz.user_id == current_user.id, Quiz.completed_at != None)
-        .order_by(Quiz.completed_at.desc())
-        .limit(limit)
-        .all()
-    )
-    result = []
-    for q in quizzes:
-        topic = db.query(Topic).filter(Topic.id == q.topic_id).first()
-        result.append(
-            {
-                "quiz_id": q.id,
-                "topic_id": q.topic_id,
-                "topic_name": topic.name if topic else "Unknown",
-                "score": q.score,
-                "difficulty": q.difficulty,
-                "completed_at": q.completed_at.isoformat() if q.completed_at else None,
-            }
-        )
-    return result
-
-
-def _update_streak(user: User, db: DBSession):
-    from datetime import date
-
-    today = date.today()
-    last = user.streak_last_date
-
-    if last is None:
-        # New user — start streak at 1
-        user.streak_count = 1
-    else:
-        days_diff = (today - last).days
-        if days_diff == 0:
-            # Already counted today — no change (prevents double-increment)
-            pass
-        elif days_diff == 1:
-            # Consecutive day — increment streak
-            user.streak_count += 1
-        else:
-            # Gap > 1 day — streak broken, reset to 1
-            user.streak_count = 1
-
-    user.streak_last_date = today
-    db.commit()
+    return QuizRe

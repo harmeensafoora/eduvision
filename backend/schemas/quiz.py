@@ -11,6 +11,7 @@ class GenerateQuizRequest(BaseModel):
     difficulty: str = "intermediate"
     count: int = 10
     lang: str = "en"
+    mode: str = "normal"  # "normal" | "revision"
 
 
 class SubmitQuizRequest(BaseModel):
@@ -36,6 +37,4 @@ class QuizOut(BaseModel):
     difficulty: str
     language: str
     questions: List[Dict[str, Any]] = []
-    created_at: Optional[datetime] = None
-
-    model_config = {"from_attributes": True}
+    created_at: Optional[datetime] = N

@@ -22,4 +22,4 @@ class PDF(Base):
     weak_topics = Column(JSON, default=list)     # list[str]
     chunks = Column(JSON, default=list)          # list[{text, page}] — stored for AI use
     embeddings = Column(Text, nullable=True)     # JSON-serialised list[list[float]]
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 of fi

@@ -23,4 +23,4 @@ class Quiz(Base):
     topic_scores = Column(JSON, default=dict)    # {topic_id: float}
     completed_at = Column(DateTime, nullable=True)
     question_hashes = Column(JSON, default=list) # list[str] for deduplication
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    per_question_results = Column(JSON, default=list)  # [{question, correct, 

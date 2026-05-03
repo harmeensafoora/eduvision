@@ -1,4 +1,4 @@
-/** Quiz view — setup, active quiz, results, badge animation. */
+/** Quiz view — setup, active quiz, results, badge animation, revision mode. */
 
 const MOCK_QUESTIONS = [
   { type:'mcq', q:'At low [S], reaction rate is approximately:', opts:['Vmax only','[S] × (Vmax/Km)','Km alone','1/Vmax'], correct:1, expl:'At low [S] ≪ Km, rate ≈ Vmax[S]/Km.' },
@@ -28,35 +28,110 @@ function setupQuizView() {
   sel.innerHTML = S.topics.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('')||'<option value="">No topics loaded</option>';
   if (S.quizSetup.topicId) sel.value = S.quizSetup.topicId;
   _updateStepDots(3,0);
+  // Reset mode toggle
+  _setQuizMode('normal');
+  _refreshWrongCount();
 }
 
 function toggleQT(el) { el.classList.toggle('sel'); }
 function setDiff(el) { document.querySelectorAll('.diff-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); S.quizSetup.diff=el.dataset.d; }
 function setCount(el) { document.querySelectorAll('.qcount-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); S.quizSetup.count=parseInt(el.dataset.n); }
 
+function _setQuizMode(mode) {
+  S.quizSetup.mode = mode;
+  const normalBtn = document.getElementById('modeNormal');
+  const revisionBtn = document.getElementById('modeRevision');
+  if (normalBtn) normalBtn.classList.toggle('active', mode==='normal');
+  if (revisionBtn) revisionBtn.classList.toggle('active', mode==='revision');
+  const normalOptions = document.getElementById('quizNormalOptions');
+  if (normalOptions) normalOptions.style.display = mode==='revision' ? 'none' : '';
+  const revisionNote = document.getElementById('quizRevisionNote');
+  if (revisionNote) revisionNote.style.display = mode==='revision' ? 'block' : 'none';
+}
+
+async function _refreshWrongCount() {
+  const badge = document.getElementById('wrongCountBadge');
+  if (!badge || !S.session) return;
+  const topicId = document.getElementById('quizTopicSelect')?.value;
+  if (!topicId) return;
+  try {
+    const data = await apiFetch('/quiz/wrong-answers/'+topicId);
+    const n = data.wrong_count || 0;
+    badge.textContent = n > 0 ? n+' to revise' : 'None yet';
+    badge.style.background = n > 0 ? 'var(--accent)' : 'var(--surface2)';
+    badge.style.color = n > 0 ? '#fff' : 'var(--muted2)';
+    const revBtn = document.getElementById('modeRevision');
+    if (revBtn) revBtn.disabled = n === 0;
+  } catch(_) {}
+}
+
+// Update wrong count when topic changes
+function onTopicChange() { _refreshWrongCount(); }
+
 async function startQuiz() {
-  const types = Array.from(document.querySelectorAll('.qt-chip.sel')).map(c=>c.dataset.v);
-  if (!types.length) { showError('quizSetupError','Please select at least one question type.'); return; }
-  S.quizSetup.types = types;
-  S.quizSetup.topicId = document.getElementById('quizTopicSelect').value;
+  const mode = S.quizSetup.mode || 'normal';
+  const topicId = document.getElementById('quizTopicSelect').value;
+  S.quizSetup.topicId = topicId;
   S.quizSetup.diff = document.querySelector('.diff-tab.active')?.dataset?.d||'intermediate';
   S.quizSetup.count = parseInt(document.querySelector('.qcount-btn.active')?.dataset?.n||'10');
   S.quizSetup.lang = document.getElementById('quizLangSelect').value||'en';
+
+  if (mode === 'revision') {
+    await _startRevisionQuiz();
+    return;
+  }
+
+  const types = Array.from(document.querySelectorAll('.qt-chip.sel')).map(c=>c.dataset.v);
+  if (!types.length) { showError('quizSetupError','Please select at least one question type.'); return; }
+  S.quizSetup.types = types;
+
   if (!S.session||!S.quizSetup.topicId) { _useMockQuiz(types); return; }
   showLoader('Generating quiz…',['Reading your uploaded materials…','Creating tailored questions…','Checking for duplicates…']);
   try {
-    const data = await apiFetch('/quiz/generate',{ method:'POST', body:{ session_id:S.session.id, topic_id:S.quizSetup.topicId, types, difficulty:S.quizSetup.diff, count:S.quizSetup.count, lang:S.quizSetup.lang } });
+    const data = await apiFetch('/quiz/generate',{ method:'POST', body:{ session_id:S.session.id, topic_id:S.quizSetup.topicId, types, difficulty:S.quizSetup.diff, count:S.quizSetup.count, lang:S.quizSetup.lang, mode:'normal' } });
     hideLoader();
     S.quizId = data.quiz_id;
+    S.quizMode = 'normal';
     S.quizQuestions = (data.questions||[]).map(normalizeQuestion);
     if (!S.quizQuestions.length) { _useMockQuiz(types); return; }
     _startActiveQuiz();
   } catch(e) { hideLoader(); showError('quizSetupError',e.message||'Quiz generation failed.'); _useMockQuiz(types); }
 }
 
+async function _startRevisionQuiz() {
+  if (!S.session||!S.quizSetup.topicId) { showError('quizSetupError','Please load a session first.'); return; }
+  showLoader('Loading your mistakes…',['Finding questions you got wrong…','Building your revision set…']);
+  try {
+    const data = await apiFetch('/quiz/generate',{ method:'POST', body:{
+      session_id: S.session.id,
+      topic_id: S.quizSetup.topicId,
+      types: ['mcq','tf','ow','os','match'],
+      difficulty: S.quizSetup.diff,
+      count: S.quizSetup.count,
+      lang: S.quizSetup.lang,
+      mode: 'revision'
+    }});
+    hideLoader();
+    S.quizId = data.quiz_id;
+    S.quizMode = 'revision';
+    S.quizQuestions = (data.questions||[]).map(normalizeQuestion);
+    if (!S.quizQuestions.length) { showError('quizSetupError','No wrong answers found yet — take a normal quiz first!'); return; }
+    _startActiveQuiz();
+  } catch(e) {
+    hideLoader();
+    const msg = e.message||'';
+    if (msg.toLowerCase().includes('no wrong answers')) {
+      showError('quizSetupError','No mistakes recorded yet! Take a normal quiz first, then revisit.');
+    } else {
+      showError('quizSetupError', msg||'Could not start revision quiz.');
+    }
+  }
+}
+
 function _useMockQuiz(types) {
   const count = S.quizSetup.count||10;
   S.quizId = null;
+  S.quizMode = 'normal';
   S.quizQuestions = MOCK_QUESTIONS.filter(q=>types.includes(q.type)).slice(0,count);
   if (!S.quizQuestions.length) S.quizQuestions = MOCK_QUESTIONS.slice(0,count);
   _startActiveQuiz();
@@ -69,6 +144,9 @@ function _startActiveQuiz() {
   S.matchState = { selected:null, matched:new Set(), pairs:[] };
   document.getElementById('quizSetup').style.display = 'none';
   document.getElementById('quizActive').style.display = 'block';
+  // Show revision banner if in revision mode
+  const revBanner = document.getElementById('quizRevisionBanner');
+  if (revBanner) revBanner.style.display = S.quizMode==='revision' ? 'flex' : 'none';
   renderQuestion();
 }
 
@@ -83,7 +161,7 @@ function renderQuestion() {
   const q = S.quizQuestions[S.quizIdx];
   const total = S.quizQuestions.length;
   document.getElementById('quizProgressFill').style.width=((S.quizIdx/total)*100)+'%';
-  document.getElementById('quizQNumber').textContent='Question '+(S.quizIdx+1)+' of '+total;
+  document.getElementById('quizQNumber').textContent=(S.quizMode==='revision'?'Revision — ':'')+' Question '+(S.quizIdx+1)+' of '+total;
   document.getElementById('quizQuestionText').textContent=q.q;
   document.getElementById('quizFeedback').className='q-feedback';
   document.getElementById('quizNextBtn').style.display='none';
@@ -195,22 +273,37 @@ async function showResults() {
   document.getElementById('quizActive').style.display='none';
   document.getElementById('quizResults').style.display='block';
   let pct;
+  let perQuestion = [];
   if (S.quizId) {
     showLoader('Evaluating your answers…');
     try {
       const result = await apiFetch('/quiz/submit',{ method:'POST', body:{ quiz_id:S.quizId, answers:S.rawAnswers } });
       hideLoader(); pct=Math.round(result.score||0);
+      perQuestion = result.per_question || [];
       if (pct===100&&S.session) { try { await apiFetch('/badge/award',{ method:'POST', body:{ topic_id:S.quizSetup.topicId } }); } catch(_){} }
     } catch(e) { hideLoader(); pct=Math.round((S.quizAnswers.filter(Boolean).length/S.quizAnswers.length)*100); }
   } else {
     pct=Math.round((S.quizAnswers.filter(Boolean).length/S.quizAnswers.length)*100);
   }
+
+  // Animate score counter
   const scoreEl=document.getElementById('resultScore');
-  scoreEl.textContent='0%'; let n=0; const step=pct/40;
+  scoreEl.textContent='0%'; let n=0; const step=Math.max(1,pct/40);
   const anim=setInterval(()=>{ n=Math.min(n+step,pct); scoreEl.textContent=Math.round(n)+'%'; if(n>=pct)clearInterval(anim); },25);
+
+  // Label
   const labels={90:'Outstanding — topic mastered!',70:'Great work — a few gaps to close.',50:'Good progress — keep reviewing.',0:'Keep going — you\'re making progress.'};
   const lKey=Object.keys(labels).reverse().find(k=>pct>=parseInt(k));
   document.getElementById('resultLabel').textContent=labels[lKey];
+
+  // Mode label
+  const modeLabelEl = document.getElementById('resultModeLabel');
+  if (modeLabelEl) {
+    modeLabelEl.style.display = S.quizMode==='revision' ? 'inline-flex' : 'none';
+    modeLabelEl.textContent = 'Revision Session';
+  }
+
+  // Score bar
   const topic=S.topics.find(t=>t.id===S.quizSetup.topicId)||S.topics[0];
   const topicName=topic?topic.name:'Topic';
   const bars=document.getElementById('resultBars');
@@ -219,7 +312,63 @@ async function showResults() {
     '<div class="r-bar-bg"><div class="r-bar-fill" style="width:0%;background:'+(pct>=80?'var(--green)':pct>=50?'var(--yellow-d)':'var(--accent)')+'" data-w="'+pct+'"></div></div>'+
     '<span class="r-bar-pct">'+pct+'%</span></div>';
   setTimeout(()=>{ document.querySelectorAll('.r-bar-fill').forEach(b=>b.style.width=b.dataset.w+'%'); },400);
+
+  // Per-question breakdown
+  _renderQuestionBreakdown(perQuestion);
+
+  // Badge
   if (pct>=100) { document.getElementById('badgeAwardWrap').style.display='flex'; _spawnConfetti(); }
+
+  // Show/hide "Study Mistakes" button based on wrong answers
+  const wrongBtn = document.getElementById('studyMistakesBtn');
+  if (wrongBtn) {
+    const wrongCount = perQuestion.filter(r=>!r.is_correct).length || S.quizAnswers.filter(a=>a===false).length;
+    wrongBtn.style.display = wrongCount > 0 && S.session ? 'inline-flex' : 'none';
+    wrongBtn.textContent = 'Study '+(wrongCount||'')+' Mistake'+(wrongCount===1?'':'s')+' →';
+  }
+}
+
+function _renderQuestionBreakdown(perQuestion) {
+  const wrap = document.getElementById('questionBreakdown');
+  if (!wrap) return;
+  if (!perQuestion || !perQuestion.length) {
+    // Build local breakdown from S.quizAnswers
+    perQuestion = S.quizQuestions.map((q,i)=>({
+      question: q.q,
+      is_correct: S.quizAnswers[i]===true,
+      correct_answer: q._correct_answer,
+      student_answer: S.rawAnswers[i],
+      feedback: q.expl,
+      type: q.type,
+    }));
+  }
+
+  const wrongItems = perQuestion.filter(r=>!r.is_correct);
+  if (!wrongItems.length) {
+    wrap.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--green);font-size:.85rem;font-weight:600">🎉 All correct! Nothing to review.</div>';
+    wrap.style.display = 'block';
+    return;
+  }
+
+  let html = '<div style="font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:.8rem">What went wrong ('+wrongItems.length+')</div>';
+  html += wrongItems.map((r,i)=>{
+    const correctDisplay = Array.isArray(r.correct_answer)
+      ? r.correct_answer.join(' / ')
+      : (r.correct_answer||'');
+    return '<div class="breakdown-item wrong" style="margin-bottom:.75rem;padding:.85rem 1rem;background:#fff7f7;border:1.5px solid #fecaca;border-radius:10px">'+
+      '<div style="font-size:.82rem;font-weight:600;color:#1c1917;margin-bottom:.35rem;line-height:1.45">'+(i+1)+'. '+_escapeHtml(r.question||'')+'</div>'+
+      '<div style="font-size:.78rem;color:#dc2626;margin-bottom:.2rem">Your answer: '+_escapeHtml(String(r.student_answer||'—'))+'</div>'+
+      (correctDisplay ? '<div style="font-size:.78rem;color:#16a34a;margin-bottom:.2rem">Correct: '+_escapeHtml(correctDisplay)+'</div>' : '')+
+      (r.feedback ? '<div style="font-size:.76rem;color:var(--muted);margin-top:.2rem;font-style:italic">'+_escapeHtml(r.feedback)+'</div>' : '')+
+    '</div>';
+  }).join('');
+
+  wrap.innerHTML = html;
+  wrap.style.display = 'block';
+}
+
+function _escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function _spawnConfetti() {
@@ -229,13 +378,4 @@ function _spawnConfetti() {
     const p=document.createElement('div'); p.className='confetti-piece';
     const angle=(i/28)*360, dist=60+Math.random()*80;
     p.style.cssText='background:'+colors[i%colors.length]+';--cx:'+Math.cos(angle*Math.PI/180)*dist+'px;--cy:'+Math.sin(angle*Math.PI/180)*dist+'px;--cr:'+(Math.random()*360)+'deg;animation-delay:'+(Math.random()*0.3)+'s;';
-    container.appendChild(p); setTimeout(()=>p.remove(),1500);
-  }
-}
-
-function retakeQuiz() {
-  S.quizAnswers=new Array(S.quizQuestions.length).fill(null); S.quizIdx=0;
-  document.getElementById('quizResults').style.display='none';
-  document.getElementById('quizActive').style.display='block';
-  renderQuestion();
-}
+  

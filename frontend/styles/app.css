@@ -364,6 +364,17 @@
 }
 .lang-pill:hover { border-color: var(--ink); background: #fafaf9; }
 .lang-pill.active { background: var(--yellow); border-color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.lang-pill.loading { opacity: .7; cursor: wait; display: flex; align-items: center; gap: .35rem; }
+.pill-spinner {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border: 1.5px solid var(--ink);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: pillSpin .55s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes pillSpin { to { transform: rotate(360deg); } }
 .summary-content { animation: fadeSlide .35s ease both; }
 .summary-headline {
   font-family: "Fraunces", serif;
@@ -1208,3 +1219,542 @@ body.profile-verbal .quiz-controls {
 body.profile-verbal button[data-tts] {
   display: inline-flex !important;
 }
+
+/* ═══════════════════════════════════════════════════════
+   ACCESSIBILITY ENGINE — UI Components
+   Reading Ruler, TTS Bar, ADHD Timer, A11y Panel, Badges
+   ═══════════════════════════════════════════════════════ */
+
+/* OpenDyslexic font face */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ADHD profile */
+body.profile-adhd .summary-section {
+  border-left: 3px solid var(--yellow, #facc15);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+}
+body.profile-adhd .summary-section + .summary-section {
+  margin-top: 1.2rem;
+}
+body.profile-adhd .summary-headline {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+}
+
+/* High contrast mode */
+body.high-contrast {
+  --bg: #000;
+  --surface: #111;
+  --text: #fff;
+  --muted: #ccc;
+  --muted2: #999;
+  filter: contrast(1.15);
+}
+
+/* Reduce motion */
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Reading Ruler */
+.reading-ruler {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 26px;
+  background: rgba(250, 204, 21, 0.18);
+  border-top: 1.5px solid rgba(250, 204, 21, 0.45);
+  border-bottom: 1.5px solid rgba(250, 204, 21, 0.45);
+  pointer-events: none;
+  z-index: 9998;
+  transition: top 0.04s linear;
+}
+
+/* ── Learner Badge (nav) ── */
+.learner-badge {
+  display: none;
+  align-items: center;
+  gap: 0.3rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+.learner-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 99px;
+  background: var(--yellow, #fef08a);
+  color: #78350f;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(120, 53, 15, 0.15);
+}
+
+/* ── A11y FAB ── */
+.a11y-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #e7e5e4);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1200;
+  color: var(--text, #1c1917);
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.a11y-fab:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  transform: translateY(-1px);
+}
+
+/* ── A11y Panel ── */
+.a11y-panel {
+  position: fixed;
+  bottom: 5rem;
+  right: 1.5rem;
+  width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #e7e5e4);
+  border-radius: 14px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+  z-index: 1201;
+  transform: translateY(12px) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.a11y-panel.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: all;
+}
+.a11y-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.1rem 0.7rem;
+  border-bottom: 1px solid var(--border, #e7e5e4);
+}
+.a11y-panel-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--muted, #78716c);
+  line-height: 1;
+  padding: 0 0.2rem;
+}
+.a11y-panel-body {
+  padding: 0.9rem 1.1rem 1.1rem;
+}
+.a11y-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted2, #a8a29e);
+  margin-bottom: 0.6rem;
+}
+
+/* Learner mode toggles grid */
+.a11y-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+.a11y-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #e7e5e4);
+  background: var(--bg, #fafaf9);
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--muted, #78716c);
+  transition: all 0.15s;
+  user-select: none;
+}
+.a11y-mode-toggle:hover {
+  border-color: #1c1917;
+  color: #1c1917;
+}
+.a11y-mode-toggle.on {
+  background: #1c1917;
+  border-color: #1c1917;
+  color: #fff;
+}
+.a11y-mode-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.a11y-mode-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Display controls */
+.a11y-display-controls { display: flex; flex-direction: column; gap: 0.55rem; }
+.a11y-ctrl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text, #1c1917);
+}
+.a11y-font-btns {
+  display: flex;
+  gap: 0.3rem;
+}
+.a11y-font-btns button {
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--border, #e7e5e4);
+  background: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text, #1c1917);
+  transition: background 0.12s;
+}
+.a11y-font-btns button:hover { background: var(--surface, #f5f5f4); }
+
+/* Toggle switch */
+.a11y-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+.a11y-switch input { opacity: 0; width: 0; height: 0; }
+.a11y-switch-slider {
+  position: absolute; inset: 0;
+  background: #d6d3d1;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.a11y-switch-slider::before {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  left: 3px; top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.a11y-switch input:checked + .a11y-switch-slider { background: #1c1917; }
+.a11y-switch input:checked + .a11y-switch-slider::before { transform: translateX(16px); }
+
+/* ── TTS Floating Bar ── */
+.tts-bar {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  background: #1c1917;
+  color: #fff;
+  border-radius: 99px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.22);
+  z-index: 1100;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  white-space: nowrap;
+}
+.tts-bar.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+.tts-btn {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.tts-btn:hover { background: rgba(255,255,255,0.22); }
+.tts-btn.tts-close {
+  background: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+}
+.tts-track {
+  width: 90px;
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tts-track-fill {
+  height: 100%;
+  background: #fde68a;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+.tts-speed {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: #fff;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  padding: 0.15rem 0.3rem;
+  cursor: pointer;
+}
+.tts-speed option { background: #1c1917; }
+.tts-label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.7);
+  min-width: 80px;
+}
+
+/* TTS inline buttons (injected into summary) */
+.tts-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: none;
+  border: 1.5px solid var(--border, #e7e5e4);
+  border-radius: 99px;
+  cursor: pointer;
+  color: var(--muted, #78716c);
+  margin-bottom: 0.5rem;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+}
+.tts-inline-btn:hover {
+  background: #1c1917;
+  color: #fff;
+  border-color: #1c1917;
+}
+.tts-full-btn {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.9rem;
+  margin-bottom: 0.8rem;
+}
+
+/* ── ADHD Pomodoro Timer ── */
+.adhd-timer {
+  display: none;
+  position: fixed;
+  top: 5rem;
+  right: 1.5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #e7e5e4);
+  border-radius: 14px;
+  padding: 0.8rem 0.7rem 0.6rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  z-index: 1050;
+  width: 88px;
+}
+.adhd-timer-ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+.adhd-ring-svg {
+  width: 56px;
+  height: 56px;
+  transform: rotate(-90deg);
+}
+.adhd-ring-bg {
+  fill: none;
+  stroke: var(--border, #e7e5e4);
+  stroke-width: 2.5;
+}
+.adhd-ring-fill {
+  fill: none;
+  stroke: #facc15;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 99.9;
+  stroke-dashoffset: 99.9;
+  transition: stroke-dashoffset 0.8s linear;
+}
+.adhd-timer-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text, #1c1917);
+}
+.adhd-timer-controls {
+  display: flex;
+  gap: 0.3rem;
+}
+.adhd-timer-controls button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border, #e7e5e4);
+  background: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text, #1c1917);
+  transition: background 0.12s;
+}
+.adhd-timer-controls button:hover { background: #1c1917; color: #fff; border-color: #1c1917; }
+.adhd-timer-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted2, #a8a29e);
+}
+.adhd-timer.done .adhd-ring-fill { stroke: #4ade80; }
+.adhd-timer.done .adhd-timer-label { color: #16a34a; }
+
+/* Kinaesthetic CTA pulse */
+@keyframes kinPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250,204,21,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(250,204,21,0); }
+}
+.kinesthetic-pulse {
+  animation: kinPulse 2s ease infinite !important;
+}
+
+/* Visual learner: keyword colour coding */
+body.profile-visual .kw {
+  background: #fef9c3;
+  color: #78350f;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+body.profile-visual .summary-section-title {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+/* Non-native: slightly larger, cleaner line spacing */
+body.profile-non-native .summary-text,
+body.profile-non-native .quiz-q-text {
+  line-height: 1.9;
+  font-size: 0.96rem;
+}
+
+/* Reading/Writing: structured notes style */
+body.profile-reading .summary-section {
+  padding: 0.8rem 1rem;
+  background: #fafaf9;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e7e5e4);
+  margin-bottom: 0.8rem;
+}
+body.profile-reading .summary-section-title {
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Dyscalculia: highlight numbers */
+body.profile-dyscalculia .summary-text {
+  font-size: 0.97rem;
+  line-height: 1.85;
+}
+
+
+/* ── Quiz mode tabs (Normal / Revision) ─────────────────────────────────────── */
+.mode-tab {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: .38rem .9rem; border-radius: 8px;
+  border: 1.5px solid rgba(28,25,23,.18);
+  background: var(--surface); color: var(--muted);
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s, box-shadow .15s;
+}
+.mode-tab:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.mode-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); box-shadow: 2px 2px 0 rgba(28,25,23,.25); }
+.mode-tab:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Per-question breakdown ─────────────────────────────────────────────────── */
+.breakdown-item { animation: slideUp .3s ease both; }
+
+/* ── PDF Library cards ──────────────────────────────────────────────────────── */
+.pdf-library { margin-top: 1.4rem; }
+.pdf-library-header {
+  font-size: .72rem; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--muted2); margin-bottom: .75rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pdf-card {
+  display: flex; align-items: flex-start; gap: .85rem;
+  padding: .85rem 1rem; border: 1.5px solid rgba(28,25,23,.1);
+  border-radius: 12px; background: var(--surface);
+  margin-bottom: .6rem; cursor: default;
+  transition: border-color .15s, box-shadow .15s;
+  animation: slideUp .3s ease both;
+}
+.pdf-card:hover { border-color: var(--ink); box-shadow: 2px 2px 0 rgba(28,25,23,.08); }
+.pdf-card-icon {
+  width: 38px; height: 38px; flex-shrink: 0;
+  background: var(--yellow); border: 1.5px solid var(--ink);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+}
+.pdf-card-body { flex: 1; min-width: 0; }
+.pdf-card-name {
+  font-size: .87rem; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: .2rem;
+}
+.pdf-card-meta { font-size: .75rem; color: var(--muted2); display: flex; gap: .6rem; flex-wrap: wrap; }
+.pdf-card-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.pdf-coverage-bar {
+  margin-top: .45rem; height: 5px; border-radius: 999px;
+  background: rgba(28,25,23,.08); overflow: hidden;
+}
+.pdf-coverage-fill { height: 100%; border-radius: 999px; background: var(--green); transition: width .6s ease; }
+.pdf-card-actions { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.pdf-action-btn {
+  width: 30px; height: 30px; border-radius: 7px; border: 1.5px solid rgba(28,25,23,.15);
+  background: var(--surface); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--muted); transition: border-color .15s, color .15s;
+}
+.pdf-action-btn:hover { border-color: var(--ink); color: var(--ink); }
