@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     print(f"[main] Storage: {'Local filesystem' if settings.USE_LOCAL_STORAGE else 'Azure Blob'}")
     print(f"[main] Database: {'SQLite' if settings.USE_SQLITE else 'PostgreSQL'}")
     print(f"[main] Translation: {'Azure Translator' if settings.USE_TRANSLATION else 'Disabled (passthrough)'}")
-    print(f"[main] AI: {'Ready' if settings.ai_ready else 'NOT CONFIGURED — set AZURE_OPENAI_API_KEY'}")
+    print(f"[main] AI: {'Ready' if settings.ai_ready else 'NOT CONFIGURED — set GEMINI_API_KEY'}")
     yield
     # Shutdown (nothing to clean up)
 
