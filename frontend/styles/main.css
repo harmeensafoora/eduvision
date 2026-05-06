@@ -90,6 +90,7 @@ body {
 .btn-dark:hover { background: var(--muted); box-shadow: 4px 4px 0 var(--accent); }
 .btn-yellow { background: var(--yellow); }
 .btn-yellow:hover { background: var(--yellow-d); box-shadow: 4px 4px 0 var(--ink); }
+.btn-danger:hover { background: #b91c1c; box-shadow: 4px 4px 0 #1c1917; }
 .btn-pink { background: var(--accent); }
 .btn-pink:hover { background: var(--accent-h); box-shadow: 4px 4px 0 var(--ink); }
 .btn-ghost { background: transparent; box-shadow: none; border-color: transparent; color: var(--muted2); }

@@ -82,6 +82,33 @@ def dev_login(body: DevLoginRequest, db: Session = Depends(get_db)):
     return _make_token_response(user)
 
 
+# ── Demo login ────────────────────────────────────────────────────────────────
+
+
+@router.post(
+    "/demo-login", response_model=TokenResponse, summary="Demo mode login with mock user"
+)
+def demo_login(db: Session = Depends(get_db)):
+    """
+    Creates a persistent demo user and returns valid JWT tokens.
+    Used when real auth (Google OAuth + dev login) is unavailable.
+    """
+    demo_email = "demo@eduvision.app"
+    user = db.query(User).filter(User.email == demo_email).first()
+    if not user:
+        user = User(
+            id="demo-" + str(uuid.uuid4())[:8],
+            email=demo_email,
+            name="Demo User",
+            google_id=None,
+            avatar_url=None,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return _make_token_response(user)
+
+
 # ── Google OAuth ──────────────────────────────────────────────────────────────
 
 

@@ -34,6 +34,7 @@ function setupQuizView() {
 }
 
 function toggleQT(el) { el.classList.toggle('sel'); }
+function toggleQChip(el) { el.classList.toggle('sel'); }
 function setDiff(el) { document.querySelectorAll('.diff-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); S.quizSetup.diff=el.dataset.d; }
 function setCount(el) { document.querySelectorAll('.qcount-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); S.quizSetup.count=parseInt(el.dataset.n); }
 
@@ -81,7 +82,7 @@ async function startQuiz() {
     return;
   }
 
-  const types = Array.from(document.querySelectorAll('.qt-chip.sel')).map(c=>c.dataset.v);
+  const types = Array.from(document.querySelectorAll('.q-chip.sel')).map(c=>c.dataset.type);
   if (!types.length) { showError('quizSetupError','Please select at least one question type.'); return; }
   S.quizSetup.types = types;
 
@@ -170,7 +171,7 @@ function renderQuestion() {
   area.innerHTML='';
   if (q.type==='mcq') _renderMCQ(q,area);
   else if (q.type==='tf') _renderTF(q,area);
-  else if (q.type==='ow') _renderOW(q,area);
+  else if (q.type==='ow' || q.type==='fb') _renderOW(q,area);
   else if (q.type==='os') _renderOS(q,area);
   else if (q.type==='match') _renderMatch(q,area);
   else if (q.type==='diagram') renderDiagramQuestion(q);
@@ -378,4 +379,20 @@ function _spawnConfetti() {
     const p=document.createElement('div'); p.className='confetti-piece';
     const angle=(i/28)*360, dist=60+Math.random()*80;
     p.style.cssText='background:'+colors[i%colors.length]+';--cx:'+Math.cos(angle*Math.PI/180)*dist+'px;--cy:'+Math.sin(angle*Math.PI/180)*dist+'px;--cr:'+(Math.random()*360)+'deg;animation-delay:'+(Math.random()*0.3)+'s;';
+    container.appendChild(p); setTimeout(()=>p.remove(),1500);
+  }
+}
+
+function retakeQuiz() {
+  S.quizAnswers=new Array(S.quizQuestions.length).fill(null); S.quizIdx=0;
+  document.getElementById('quizResults').style.display='none';
+  document.getElementById('quizActive').style.display='block';
+  renderQuestion();
+}
+
+function studyMistakes() {
+  _setQuizMode('revision');
+  document.getElementById('quizResults').style.display='none';
+  setupQuizView();
+}
   

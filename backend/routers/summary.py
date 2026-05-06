@@ -69,7 +69,7 @@ def get_languages():
 def get_summary(
     session_id: str,
     topic_id: str,
-    depth: str = Query("structured", regex="^(quick|structured|detailed)$"),
+    depth: str = Query("structured", pattern="^(quick|structured|detailed)$"),
     lang: str = Query("en"),
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),

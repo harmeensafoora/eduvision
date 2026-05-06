@@ -1,11 +1,8 @@
 /**
  * EduVision API client
  * Handles all fetch calls, automatic token refresh on 401, and error display.
+ * CONFIG is defined in config.js which must be loaded first.
  */
-
-const CONFIG = {
-  API_BASE: 'http://localhost:8000/api',
-};
 
 /**
  * Attach auth header and perform fetch. On 401 automatically refreshes
@@ -14,10 +11,13 @@ const CONFIG = {
 async function apiFetch(endpoint, opts) {
   opts = opts || {};
   const token = localStorage.getItem('ev_token');
-  opts.headers = Object.assign({}, opts.headers || {}, {
+  const headers = Object.assign({}, opts.headers || {}, {
     'Content-Type': 'application/json',
-    'Authorization': token ? 'Bearer ' + token : '',
   });
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
+  opts.headers = headers;
   if (opts.body && typeof opts.body === 'object') {
     opts.body = JSON.stringify(opts.body);
   }
@@ -26,10 +26,11 @@ async function apiFetch(endpoint, opts) {
     const r = await fetch(CONFIG.API_BASE + endpoint, opts);
 
     if (r.status === 401) {
-      const refreshed = await _refreshToken();
+      const hadRefreshToken = !!localStorage.getItem('ev_refresh');
+      const refreshed = hadRefreshToken && await _refreshToken();
       if (refreshed) return apiFetch(endpoint, opts);
-      // Refresh failed — force logout
-      if (typeof logout === 'function') logout();
+      // Only force-logout if a real refresh token existed but the refresh failed.
+      if (hadRefreshToken && typeof logout === 'function') logout();
       return null;
     }
 
@@ -52,16 +53,21 @@ async function apiFetch(endpoint, opts) {
  */
 async function apiUpload(endpoint, formData) {
   const token = localStorage.getItem('ev_token');
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
   const r = await fetch(CONFIG.API_BASE + endpoint, {
     method: 'POST',
-    headers: { 'Authorization': token ? 'Bearer ' + token : '' },
+    headers: headers,
     body: formData,
   });
 
   if (r.status === 401) {
-    const refreshed = await _refreshToken();
+    const hadRefreshToken = !!localStorage.getItem('ev_refresh');
+    const refreshed = hadRefreshToken && await _refreshToken();
     if (refreshed) return apiUpload(endpoint, formData);
-    if (typeof logout === 'function') logout();
+    if (hadRefreshToken && typeof logout === 'function') logout();
     return null;
   }
 

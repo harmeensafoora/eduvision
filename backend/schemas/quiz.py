@@ -37,4 +37,4 @@ class QuizOut(BaseModel):
     difficulty: str
     language: str
     questions: List[Dict[str, Any]] = []
-    created_at: Optional[datetime] = N
+    created_at: Optional[datetime] = None

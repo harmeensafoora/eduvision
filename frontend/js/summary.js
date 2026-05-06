@@ -197,4 +197,9 @@ function quizFromSummary() { S.quizSetup.topicId = S.activeTopic; navigate('quiz
 
 function _truncateName(name, max) {
   if (!name) return '';
-  return name.lengt
+  return name.length > max ? name.slice(0, max) + '…' : name;
+}
+
+function _escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}

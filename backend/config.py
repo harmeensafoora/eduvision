@@ -3,9 +3,8 @@ import secrets
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
-
 ENV_FILE = Path(__file__).parent / ".env"
+load_dotenv(ENV_FILE)
 
 
 def _auto_secret(var_name: str) -> str:

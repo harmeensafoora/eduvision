@@ -42,7 +42,7 @@ def _find_cached_pdf(file_hash: str, db: DBSession) -> PDF | None:
     return (
         db.query(PDF)
         .filter(PDF.file_hash == file_hash, PDF.parsed_at != None)
-        .order_by(PDF.created_at.desc())
+        .order_by(PDF.parsed_at.desc())
         .first()
     )
 
@@ -100,7 +100,7 @@ def _process_session(session_id: str, pdf_ids: list[str], db_factory):
                             PDF.parsed_at != None,
                             PDF.id != pdf_id,
                         )
-                        .order_by(PDF.created_at.desc())
+                        .order_by(PDF.parsed_at.desc())
                         .first()
                     )
 
@@ -333,6 +333,33 @@ def session_status(
     return SessionStatusOut(session_id=session_id, status=session.status)
 
 
+@router.get(
+    "/{session_id}/pdf/{pdf_id}/url",
+    summary="Get a fresh URL for a PDF in the session",
+)
+def get_pdf_url(
+    session_id: str,
+    pdf_id: str,
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db),
+):
+    session = (
+        db.query(Session)
+        .filter(Session.id == session_id, Session.user_id == current_user.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    pdf = db.query(PDF).filter(
+        PDF.id == pdf_id, PDF.session_id == session_id
+    ).first()
+    if not pdf:
+        raise HTTPException(status_code=404, detail="PDF not found.")
+
+    return {"url": pdf.blob_url, "filename": pdf.filename}
+
+
 @router.get("/{session_id}", summary="Session detail with topics")
 def get_session(
     session_id: str,
@@ -356,4 +383,29 @@ def get_session(
     topic_list = []
     for t in topics:
         scores = t.coverage_scores or {}
-        best_co
+        best_cov = max(scores.values()) if scores else 0.0
+        topic_list.append({
+            "id": t.id,
+            "name": t.name,
+            "coverage": round(best_cov * 100),
+            "best_pdf_id": t.best_pdf_id,
+            "coverage_by_pdf": {pid: round(cov * 100) for pid, cov in scores.items()},
+        })
+
+    pdf_list = []
+    for p in pdfs:
+        pdf_list.append({
+            "id": p.id,
+            "filename": p.filename,
+            "page_count": p.page_count,
+            "blob_url": p.blob_url,
+        })
+
+    return {
+        "id": session.id,
+        "title": session.title,
+        "status": session.status,
+        "topics": topic_list,
+        "pdfs": pdf_list,
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+    }

@@ -9,7 +9,7 @@ const S = {
   session: null,
   topics: [],
   activeTopic: null,
-  currentDepth: 'structured',
+  currentDepth: 'quick',
   currentLang: 'en',
   roadmapDepth: 'solid',
   quizSetup: { types: ['mcq'], diff: 'intermediate', count: 10, lang: 'en', topicId: null },
@@ -116,25 +116,18 @@ function navigate(view) {
     // Fade in
     canvas.style.opacity = '1';
 
-    if (view === 'summary' && S.topics.length) renderTopicSidebar();
+    if (view === 'summary') {
+      if (S.topics.length) {
+        renderTopicSidebar();
+        if (!S.activeTopic) selectTopic(S.topics[0].id);
+        else loadSummary();
+      }
+    }
     if (view === 'roadmap') renderRoadmap();
     if (view === 'dashboard') renderDashboard();
     if (view === 'quiz') setupQuizView();
+    if (view === 'mindscape') renderMindscape();
   }, 250);
-}
-
-// ── Demo data ─────────────────────────────────────────────────────────────────
-function loadDemoData() {
-  S.topics = [
-    { id:'t1', name:'Enzyme Kinetics', coverage:94, bestPdf:'Harper\'s Ch.8' },
-    { id:'t2', name:'Signal Transduction', coverage:78, bestPdf:'Stryer Ch.12' },
-    { id:'t3', name:'Metabolic Pathways', coverage:85, bestPdf:'Harper\'s Ch.14' },
-    { id:'t4', name:'DNA Replication', coverage:72, bestPdf:'Stryer Ch.25' },
-    { id:'t5', name:'Protein Synthesis', coverage:68, bestPdf:'Lehninger Ch.27' },
-  ];
-  S.session = { id:'s1', title:'Biochemistry Study', pdfCount:3 };
-  S.sessions = [{ id:'s1', title:'Biochemistry Study', pdfCount:3, date:'Today' }];
-  renderTopicSidebar();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -144,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', () => {
     if (S.user) {
       const v = window.location.hash.replace('#', '') || 'upload';
-      if (['upload','summary','roadmap','quiz','dashboard'].includes(v)) navigate(v);
+      if (['upload','summary','roadmap','quiz','dashboard','mindscape'].includes(v)) navigate(v);
     }
   });
 

@@ -14,6 +14,17 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import settings
 from backend.database import create_tables
 
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
+    _slowapi_available = True
+except ImportError:
+    limiter = None
+    _slowapi_available = False
+    print("[main] slowapi not installed — rate limiting disabled. Run: pip install slowapi")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,6 +45,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+if _slowapi_available:
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 # Use allow_origins=["*"] so that every origin is accepted — including the

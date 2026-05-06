@@ -1,6 +1,29 @@
 /** Roadmap view */
 const DEPTH_LABELS = { exam:'Just the exam bits', solid:'Solid understanding', expert:'Become an expert' };
 function setRoadmapDepth(d,el) { S.roadmapDepth=d; document.querySelectorAll('.rm-depth-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderRoadmap(); }
+async function regenerateRoadmap() {
+  if (!S.session) return;
+  const goal = document.getElementById('goalInput')?.value || '';
+  const track = document.getElementById('roadmapTrack');
+  track.innerHTML='<div style="padding:2rem;display:flex;align-items:center;gap:.6rem"><div class="ev-loader" style="font-size:1.4rem">ev.</div><span style="font-size:.85rem;color:var(--muted2)">Regenerating roadmap…</span></div>';
+  try {
+    const data = await apiFetch('/roadmap/'+S.session.id+'/regenerate', {
+      method: 'POST',
+      body: { depth: S.roadmapDepth, goal: goal || undefined }
+    });
+    S.roadmapNodes = data.nodes || [];
+    document.getElementById('rmTopicLabel').textContent = S.session.title || 'Your Study Plan';
+    track.innerHTML = S.roadmapNodes.map((n,i) =>
+      '<div class="rm-step '+n.status+'" style="animation-delay:'+(i*0.08)+'s">'+
+      '<div class="rm-dot"></div>'+
+      '<div class="rm-card" onclick="openDrawer(\''+n.id+'\')">'+
+      '<div class="rm-icon">'+(n.status==='done'?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'&#x25CB;')+'</div>'+
+      '<div style="flex:1"><div class="rm-label">'+n.topic_name+'</div><div class="rm-sub">'+(n.is_locked?'Locked':'Step '+(n.order_index+1))+'</div></div>'+
+      (!n.is_locked?'<button class="rm-quiz-btn" onclick="event.stopPropagation();quizFromRoadmap(\''+n.topic_id+'\')">Take quiz</button>':'')+
+      '</div></div>'
+    ).join('');
+  } catch(e) { track.innerHTML='<div style="padding:1.5rem;font-size:.85rem;color:var(--muted2)">Could not regenerate roadmap: '+e.message+'</div>'; }
+}
 async function renderRoadmap() {
   if (!S.session) return;
   document.getElementById('rmDepthBadge').textContent=DEPTH_LABELS[S.roadmapDepth];
@@ -16,10 +39,18 @@ async function renderRoadmap() {
       '<div class="rm-card" onclick="openDrawer(\''+n.id+'\')">'+
       '<div class="rm-icon">'+(n.status==='done'?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'&#x25CB;')+'</div>'+
       '<div style="flex:1"><div class="rm-label">'+n.topic_name+'</div><div class="rm-sub">'+(n.is_locked?'Locked':'Step '+(n.order_index+1))+'</div></div>'+
+      (!n.is_locked&&!n.is_completed?'<button class="rm-complete-btn" onclick="event.stopPropagation();markNodeComplete(\''+n.id+'\')" title="Mark complete">&#10003;</button>':'')+
       (!n.is_locked?'<button class="rm-quiz-btn" onclick="event.stopPropagation();quizFromRoadmap(\''+n.topic_id+'\')">Take quiz</button>':'')+
       '</div></div>'
     ).join('');
   } catch(e) { track.innerHTML='<div style="padding:1.5rem;font-size:.85rem;color:var(--muted2)">Could not load roadmap: '+e.message+'</div>'; }
+}
+async function markNodeComplete(nodeId) {
+  if (!S.session) return;
+  try {
+    await apiFetch('/roadmap/'+S.session.id+'/node/'+nodeId+'/complete', { method:'PATCH', body:{} });
+    renderRoadmap();
+  } catch(e) { console.error('Failed to mark node complete:', e); }
 }
 function openDrawer(nodeId) {
   const node=S.roadmapNodes.find(n=>n.id===nodeId);

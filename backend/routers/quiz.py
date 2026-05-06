@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session as DBSession
 from backend.database import get_db
 from backend.models.pdf_model import PDF
 from backend.models.quiz import Quiz
+from backend.models.question_state import QuestionState
 from backend.models.session_model import Session
 from backend.models.topic import Topic
 from backend.schemas.quiz import GenerateQuizRequest, QuizResultOut, SubmitQuizRequest
@@ -27,6 +28,33 @@ from backend.utils.auth_utils import get_current_user
 from backend.models.user import User
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+
+def _get_wrong_questions(user_id: str, topic_id: str, db: DBSession) -> list[dict]:
+    """Collect questions the user previously answered incorrectly on this topic."""
+    quizzes = (
+        db.query(Quiz)
+        .filter(Quiz.user_id == user_id, Quiz.topic_id == topic_id, Quiz.completed_at != None)
+        .order_by(Quiz.completed_at.desc())
+        .all()
+    )
+    wrong: list[dict] = []
+    for qz in quizzes:
+        results = qz.per_question_results or []
+        for r in results:
+            if not r.get("is_correct", True):
+                wrong.append({
+                    "type": r.get("type", "mcq"),
+                    "question": r.get("question", ""),
+                    "options": r.get("options", []),
+                    "pairs": r.get("pairs", []),
+                    "correct_answer": r.get("correct_answer", ""),
+                    "explanation": r.get("feedback", ""),
+                })
+    return wrong
 
 
 def _get_topic_excerpts(topic: Topic, db: DBSession, max_chars: int = 4000) -> str:
@@ -306,4 +334,88 @@ def submit_quiz(
 
     _update_streak(current_user, db)
 
-    return QuizRe
+    # ── Update spaced repetition (SRS) state ─────────────────────────────
+    for i, (q, student_ans) in enumerate(zip(questions, answers)):
+        q_hash = q.get("hash") or ai_service.question_hash(quiz.topic_id, q.get("question", ""))
+        result = per_question[i]
+        is_correct = result.get("is_correct", False)
+
+        qs = (
+            db.query(QuestionState)
+            .filter(
+                QuestionState.user_id == current_user.id,
+                QuestionState.topic_id == quiz.topic_id,
+                QuestionState.question_hash == q_hash,
+            )
+            .first()
+        )
+        if not qs:
+            qs = QuestionState(
+                user_id=current_user.id,
+                topic_id=quiz.topic_id,
+                question_hash=q_hash,
+                attempts=0,
+                correct_count=0,
+            )
+            db.add(qs)
+        qs.attempts += 1
+        if is_correct:
+            qs.correct_count += 1
+            if qs.correct_count >= 3:
+                qs.state = "retired"
+        else:
+            qs.state = "due"
+        qs.last_attempted_at = datetime.now(timezone.utc)
+
+    db.commit()
+
+    return QuizResultOut(
+        quiz_id=quiz.id,
+        score=final_score,
+        topic_scores={quiz.topic_id: final_score},
+        per_question=per_question,
+        mastered_topics=mastered,
+        needs_work=needs_work,
+        light_revision=light_revision,
+        badge_awarded=False,
+    )
+
+
+# ── History & wrong-answers endpoints ─────────────────────────────────────────
+
+
+@router.get("/history", summary="User's quiz history")
+def quiz_history(
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db),
+):
+    quizzes = (
+        db.query(Quiz)
+        .filter(Quiz.user_id == current_user.id, Quiz.completed_at != None)
+        .order_by(Quiz.completed_at.desc())
+        .limit(50)
+        .all()
+    )
+    result = []
+    for q in quizzes:
+        topic = db.query(Topic).filter(Topic.id == q.topic_id).first()
+        result.append({
+            "id": q.id,
+            "topic_id": q.topic_id,
+            "topic_name": topic.name if topic else "Unknown",
+            "score": q.score,
+            "difficulty": q.difficulty,
+            "mode": q.question_types[0] if q.question_types else "normal",
+            "completed_at": q.completed_at.isoformat() if q.completed_at else None,
+        })
+    return result
+
+
+@router.get("/wrong-answers/{topic_id}", summary="Wrong answers for a topic")
+def get_wrong_answers(
+    topic_id: str,
+    current_user: User = Depends(get_current_user),
+    db: DBSession = Depends(get_db),
+):
+    wrong = _get_wrong_questions(current_user.id, topic_id, db)
+    return {"wrong_count": len(wrong), "questions": wrong}

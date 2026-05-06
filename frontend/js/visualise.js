@@ -4,6 +4,66 @@
  * Generates topic-matched CSS/SVG animations + multi-panel split view.
  */
 
+// ── CONCEPT MAP VISUALIZATION FROM BACKEND ────────────────────────────────────
+
+async function loadConceptVisualization(topicId, mode) {
+  if (!S.session || !topicId) return null;
+  try {
+    return await apiFetch(
+      '/summary/' + S.session.id + '/' + topicId + '/visualization?mode=' + (mode || 'diagram')
+    );
+  } catch (e) {
+    console.warn('Visualization load failed:', e);
+    return null;
+  }
+}
+
+function renderConceptMapDiagram(container, data) {
+  if (!data || !data.nodes || !data.nodes.length) return;
+  const nodes = data.nodes;
+  const edges = data.edges || [];
+  const w = container.clientWidth || 600;
+  const h = container.clientHeight || 400;
+
+  // Simple force-directed-ish layout
+  const positions = {};
+  nodes.forEach((n, i) => {
+    const angle = (i / nodes.length) * Math.PI * 2;
+    const radius = Math.min(w, h) * 0.3;
+    positions[n.id] = {
+      x: w / 2 + Math.cos(angle) * radius,
+      y: h / 2 + Math.sin(angle) * radius,
+    };
+  });
+
+  let svg = '<svg width="100%" height="100%" viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Edges
+  edges.forEach(e => {
+    const from = positions[e.from];
+    const to = positions[e.to];
+    if (from && to) {
+      svg += '<line x1="' + from.x + '" y1="' + from.y + '" x2="' + to.x + '" y2="' + to.y +
+        '" stroke="rgba(28,25,23,.2)" stroke-width="1.5"/>';
+    }
+  });
+
+  // Nodes
+  nodes.forEach((n, i) => {
+    const pos = positions[n.id];
+    if (!pos) return;
+    const r = n.size || 18;
+    svg += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + r + '" fill="#fde047" stroke="#1c1917" stroke-width="1.5">' +
+      '<animate attributeName="r" values="' + r + ';' + (r + 3) + ';' + r + '" dur="' + (2 + i * 0.3) + 's" repeatCount="indefinite"/>' +
+      '</circle>';
+    svg += '<text x="' + pos.x + '" y="' + (pos.y + 4) + '" text-anchor="middle" fill="#1c1917" font-size="9" font-weight="600" font-family="DM Sans,sans-serif">' +
+      _esc(n.label || n.id.substring(0, 8)) + '</text>';
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
 // ── TOPIC → ANIMATION CATEGORY MAPPING ──────────────────────────────────────
 const TOPIC_ANIM_MAP = [
   { pattern: /physi|force|motion|energy|wave|electromagn|thermo|quantum|optic|mechanic/i,  key: 'physics'  },
@@ -877,7 +937,7 @@ function openVisualModal(topicId, topicName) {
         </button>
       </div>
       <div class="visual-modal-canvas ${cls}">${svg}</div>
-      <div class="visual-modal-body">
+      <div class="visual-modal-body" id="visualModalBody">
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1.2rem">
           ${LEARNER_TYPES.map(lt=>`
             <button class="btn btn-sm" style="font-size:.72rem" onclick="switchVisualMode('${lt.key}','${topicId}','${_esc(topicName)}')"
@@ -886,7 +946,13 @@ function openVisualModal(topicId, topicName) {
             </button>
           `).join('')}
         </div>
-        <div style="display:flex;gap:.75rem;padding-top:1rem;border-top:1px solid rgba(28,25,23,.07)">
+        <div id="conceptVizArea" style="margin-top:1rem;padding:1rem;background:#fafaf9;border-radius:10px;border:1px solid rgba(28,25,23,.07);min-height:180px">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted2);margin-bottom:.5rem">Concept Map</div>
+          <div id="conceptVizSvg" style="display:flex;align-items:center;justify-content:center">
+            <div style="font-size:.8rem;color:var(--muted2)">Loading concept map…</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.75rem;padding-top:1rem;margin-top:1rem;border-top:1px solid rgba(28,25,23,.07)">
           <button class="btn btn-dark" onclick="closeVisualModal();navigate('summary');selectTopicById('${topicId}')">
             Read summary &rarr;
           </button>
@@ -898,6 +964,20 @@ function openVisualModal(topicId, topicName) {
     </div>
   `;
   document.body.appendChild(overlay);
+
+  // Load backend concept visualization
+  _loadBackendViz(topicId);
+}
+
+async function _loadBackendViz(topicId) {
+  const data = await loadConceptVisualization(topicId, 'diagram');
+  const svgArea = document.getElementById('conceptVizSvg');
+  if (!svgArea) return;
+  if (data && data.nodes && data.nodes.length) {
+    renderConceptMapDiagram(svgArea, data);
+  } else {
+    svgArea.innerHTML = '<div style="font-size:.8rem;color:var(--muted2)">No concept map available yet — try after completing a quiz.</div>';
+  }
 }
 
 function closeVisualModal() {
@@ -928,10 +1008,7 @@ function quizFromVisual(topicId) {
 }
 
 function selectTopicById(topicId) {
-  const items = document.querySelectorAll('.topic-item');
-  items.forEach(el => {
-    if (el.dataset.id === topicId) el.click();
-  });
+  if (typeof selectTopic === 'function') selectTopic(topicId);
 }
 
 // ── LEARNER PROFILE APPLICATION ───────────────────────────────────────────────

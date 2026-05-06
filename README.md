@@ -1,52 +1,72 @@
 # EduVision
 
-An AI-powered adaptive learning platform that transforms uploaded study material into personalised quizzes, learning roadmaps, summaries, and knowledge visualisations. The UI adapts to individual learner profiles (dyslexic, autistic, visual, verbal).
+An AI-powered adaptive learning platform that transforms uploaded PDFs into personalised quizzes, learning roadmaps, summaries, and knowledge visualisations. The UI adapts to individual learner profiles (dyslexic, ADHD, autistic, visual, verbal, auditory, and more).
 
 ## Features
 
-- **PDF Upload & Processing** — Upload lecture notes or textbooks; the backend extracts and indexes content
-- **AI-Generated Quizzes** — Adaptive quizzes (MCQ, True/False, open word, match, diagram) generated from your material using Azure OpenAI
-- **Learning Roadmap** — Auto-generated topic roadmap based on uploaded content
-- **Summaries** — Quick, structured, and detailed AI-written summaries per topic
-- **Knowledge Visualisation** — Interactive concept maps showing topic relationships
-- **Spaced Repetition (SRS)** — Smart review scheduling based on performance
-- **Learner Profiles** — Accessibility-first UI modes for dyslexic, autistic, visual, and verbal learners
-- **Text-to-Speech** — TTS for summaries and quiz questions
-- **Badges & Progress** — Gamified progress tracking
-- **Google OAuth** — Sign in with Google
+- **PDF Upload & Processing** — Upload lecture notes or textbooks; the backend extracts text, embeds chunks with sentence-transformers, and clusters them into topics
+- **AI-Generated Summaries** — Quick, structured, and detailed AI-written summaries per topic with language switching (9 languages) and RTL support
+- **Adaptive Quizzes** — MCQ, True/False, open word, open sentence, and matching questions generated from your material via Azure OpenAI
+- **Spaced Repetition** — Wrong answers are tracked and surfaced in "Study Mistakes" revision mode
+- **Learning Roadmap** — Auto-generated topic roadmap with three depth levels (exam / solid / expert)
+- **Mindscape Gallery** — Animated SVG topic visualisations matched to your learner profile
+- **Knowledge Concept Map** — Interactive concept graph built from quiz performance
+- **Dashboard** — Stats, strengths/weaknesses, streak counter, and AI observations
+- **Badges** — Earned by scoring 100% on a topic quiz
+- **Google OAuth + Dev Login** — Sign in with Google or via email/name (dev mode)
+- **Learner Profiles** — 10 accessibility modes: visual, ADHD, dyslexia, autism, auditory, verbal, kinaesthetic, non-native, reading/writing, dyscalculia
 
 ## Tech Stack
 
 **Backend**
-- Python · FastAPI · SQLAlchemy · SQLite (dev) / PostgreSQL (prod)
-- Azure OpenAI (GPT-4o) · Azure Blob Storage · Azure Translator
-- PyMuPDF / pdfplumber for PDF parsing
-- Sentence Transformers + scikit-learn for semantic search
+- Python 3.11+ · FastAPI · SQLAlchemy · SQLite (dev) / PostgreSQL (prod)
+- Azure OpenAI `gpt-4o-mini` · Sentence Transformers (`all-MiniLM-L6-v2`) · scikit-learn KMeans
+- PyMuPDF (primary) / pdfplumber (fallback) for PDF parsing
+- Azure Blob Storage (optional, defaults to local filesystem)
+- Azure Translator (optional, passthrough if not configured)
+- slowapi for rate limiting
 
 **Frontend**
-- Vanilla JS (modular SPA) · HTML · CSS
-- No build step — open directly in a browser or serve statically
+- Vanilla JS modular SPA · HTML · CSS (no build step)
+- Hash-based routing — open `frontend/index.html` directly or serve statically
 
 ## Project Structure
 
 ```
-eduvision/
+eduvision_final/
 ├── backend/
-│   ├── main.py              # FastAPI app entry point
-│   ├── config.py            # Settings (env-driven)
-│   ├── database.py          # SQLAlchemy setup
-│   ├── models/              # ORM models
-│   ├── routers/             # API route handlers (auth, quiz, roadmap, etc.)
-│   ├── schemas/             # Pydantic request/response schemas
-│   ├── services/            # AI, PDF, storage, translation logic
-│   ├── utils/               # Auth helpers, caching
+│   ├── main.py              # FastAPI app, routers, CORS, rate limiting
+│   ├── config.py            # Settings (env-driven, SQLite/local fallbacks)
+│   ├── database.py          # SQLAlchemy engine and session factory
+│   ├── models/              # ORM models (user, session, pdf, topic, quiz, roadmap…)
+│   ├── routers/             # auth, session, summary, quiz, roadmap, badge, dashboard, user, visualization
+│   ├── schemas/             # Pydantic request/response models
+│   ├── services/            # ai_service, pdf_service, storage_service, translation_service
+│   ├── utils/               # auth_utils (JWT), cache (Redis / in-memory fallback)
+│   ├── .env                 # Your local secrets (not committed)
+│   ├── .env.example         # Template — copy this to .env
 │   └── requirements.txt
 ├── frontend/
 │   ├── index.html           # Landing / login page
-│   ├── app.html             # Main app shell
-│   ├── js/                  # Modular JS (auth, quiz, roadmap, dashboard, etc.)
-│   └── styles/              # CSS
-└── start.py                 # Dev server launcher
+│   ├── app.html             # Main SPA shell
+│   ├── auth/callback.html   # Google OAuth callback handler
+│   ├── js/
+│   │   ├── config.js        # API_BASE (auto-detects dev vs prod)
+│   │   ├── api.js           # apiFetch, apiUpload, auto token-refresh on 401
+│   │   ├── app.js           # Global state S{}, navigate(), showLoader
+│   │   ├── auth.js          # googleLogin, devLogin, logout, onboarding
+│   │   ├── upload.js        # Drag-drop upload, session list, PDF library
+│   │   ├── summary.js       # Topic sidebar, depth tabs, lang pills, doc panel
+│   │   ├── quiz.js          # Setup → active (all types) → results, revision mode
+│   │   ├── roadmap.js       # Step track, depth tabs, drawer
+│   │   ├── dashboard.js     # Stats, strengths/weaknesses, concept map, badges
+│   │   ├── visualise.js     # Mindscape gallery, learner-type SVG animations, visual modal
+│   │   └── diagram.js       # SVG hotspot diagram question type
+│   └── styles/
+│       ├── main.css         # Design tokens, buttons, nav, animations
+│       ├── app.css          # View-specific styles
+│       └── mindscape.css    # Mindscape gallery and visual modal styles
+└── start.py                 # Dev server launcher (wraps uvicorn)
 ```
 
 ## Getting Started
@@ -54,79 +74,119 @@ eduvision/
 ### Prerequisites
 
 - Python 3.11+
-- Azure OpenAI API key and deployment
+- Azure OpenAI resource with a `gpt-4o-mini` deployment
 
-### Setup
+### 1. Clone and set up Python environment
 
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/harmeensafoora/eduvision.git
-   cd eduvision
-   ```
+```bash
+git clone https://github.com/harmeensafoora/eduvision.git
+cd eduvision_final
 
-2. **Create a virtual environment and install dependencies**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   pip install -r backend/requirements.txt
-   ```
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
 
-3. **Configure environment variables**
+pip install -r backend/requirements.txt
+```
 
-   Copy the example and fill in your values:
-   ```bash
-   cp backend/.env.example backend/.env
-   ```
+### 2. Configure environment variables
 
-   Key variables:
-   ```
-   AZURE_OPENAI_ENDPOINT=
-   AZURE_OPENAI_API_KEY=
-   AZURE_OPENAI_DEPLOYMENT=
-   JWT_SECRET=
-   ```
+```bash
+cp backend/.env.example backend/.env
+```
 
-4. **Run the backend**
-   ```bash
-   python start.py
-   # or: uvicorn backend.main:app --reload
-   ```
+Open `backend/.env` and fill in your Azure OpenAI credentials:
 
-   API at `http://localhost:8000` · Swagger docs at `http://localhost:8000/docs`
+```env
+AZURE_OPENAI_ENDPOINT=https://<your-resource>.cognitiveservices.azure.com/
+AZURE_OPENAI_API_KEY=<your-key>
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_API_VERSION=2024-12-01-preview
 
-5. **Open the frontend**
+# Required for the email login form to work in dev
+ENABLE_DEV_LOGIN=true
+```
 
-   ```bash
-   cd frontend && python -m http.server 8080
-   ```
-   Then open `http://localhost:8080/index.html` — or open `frontend/index.html` directly in a browser.
+JWT secrets are **auto-generated** on first run if you leave them blank — no action needed.
 
-   > Click **"Try the demo"** on the landing page for instant access with no credentials.
+### 3. Start the backend
 
-## API Overview
+```bash
+python start.py
+```
 
-| Router | Prefix | Description |
-|--------|--------|-------------|
-| auth | `/auth` | Register, login, Google OAuth, dev login |
-| user | `/users` | Profile and learner preferences |
-| session | `/sessions` | Upload PDFs, manage study sessions |
-| quiz | `/quiz` | Generate and submit quizzes |
-| roadmap | `/roadmap` | Topic roadmap generation |
-| summary | `/summary` | AI summaries (quick / structured / detailed) |
-| visualization | `/visualization` | Concept graph data |
-| dashboard | `/dashboard` | Progress overview and stats |
-| badge | `/badges` | Achievement badges |
+- API: `http://localhost:8000`
+- Swagger docs: `http://localhost:8000/docs`
+- Press **Ctrl+C** to stop
 
-## Learner Profile Classes
+Optional flags:
+```bash
+python start.py --port 9000      # change port
+python start.py --no-reload      # disable file-watching
+```
 
-Applied to `<body>` to activate accessibility modes:
+### 4. Open the frontend
 
-| Class | Effect |
-|-------|--------|
-| `profile-dyslexic` | OpenDyslexic font, increased letter spacing |
-| `profile-autistic` | Reduced animations, larger touch targets |
-| `profile-visual` | Concept maps shown alongside text |
-| `profile-verbal` | TTS controls always visible |
+Serve the frontend with Python's built-in server (needed so `fetch()` works correctly):
+
+```bash
+cd frontend
+python -m http.server 8080
+```
+
+Then open **`http://localhost:8080/index.html`** in your browser.
+
+> Alternatively, open `g 4  ` directly as a `file://` URL — CORS is configured to accept all origins including `null`.
+
+### 5. Sign in
+
+- **Dev login** — Enter any email and name on the login screen and click **Sign in**. This requires `ENABLE_DEV_LOGIN=true` in your `.env`.
+- **Google OAuth** — Configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`. The callback URL must match `GOOGLE_REDIRECT_URI` (default: `http://localhost:8000/api/auth/callback`).
+
+### 6. Use the app
+
+1. Go to **Upload** — drag-and-drop one or more PDFs and click **Analyse**
+2. Wait for processing (typically 10–30 seconds per PDF)
+3. Navigate to **Summary** to read AI-generated summaries per topic
+4. Go to **Quiz** to generate and take adaptive quizzes
+5. Visit **Roadmap** for your personalised learning path
+6. Open **Mindscape** for animated visual explainers per topic
+7. Check **Dashboard** for stats, performance, and badges
+
+## API Reference
+
+All endpoints are prefixed with `/api`.
+
+| Router | Prefix | Key Endpoints |
+|--------|--------|---------------|
+| auth | `/api/auth` | `POST /dev-login`, `GET /login` (Google), `GET /callback`, `POST /refresh`, `POST /logout` |
+| session | `/api/session` | `POST /upload`, `GET /list`, `GET /{id}`, `GET /{id}/status` |
+| summary | `/api/summary` | `GET /{session_id}/{topic_id}?depth=quick\|structured\|detailed&lang=en` |
+| quiz | `/api/quiz` | `POST /generate`, `POST /submit`, `GET /history`, `GET /wrong-answers/{topic_id}` |
+| roadmap | `/api/roadmap` | `GET /{session_id}?depth=exam\|solid\|expert`, `POST /{session_id}/regenerate`, `PATCH /{session_id}/node/{node_id}/complete` |
+| dashboard | `/api/dashboard` | `GET /`, `GET /observation` |
+| badge | `/api/badge` | `POST /award`, `GET /list` |
+| user | `/api/user` | `GET /me`, `POST /profile`, `GET /export`, `DELETE /me` |
+| visualization | `/api/summary` | `GET /{session_id}/{topic_id}/visualization?mode=diagram` |
+
+## Learner Profile Modes
+
+Selected during onboarding and applied as CSS body classes:
+
+| Mode | Effect |
+|------|--------|
+| Visual | Concept maps shown alongside summaries |
+| ADHD | Bite-sized chunks, progress dots, kinetic animations |
+| Dyslexia | High contrast, generous spacing, colour-coded text |
+| Autism Spectrum | Predictable grids, muted palette, reduced motion |
+| Auditory | Waveform visualisations, prominent TTS controls |
+| Verbal | Word clouds, definition tooltips, rich typography |
+| Kinaesthetic | Interactive drag-and-drop practice questions |
+| Non-Native Speaker | One-click translation, simplified phrasing |
+| Reading / Writing | Notebook-style layout, highlight mode |
+| Dyscalculia | Icon-based progress bars, shapes instead of numbers |
 
 ## License
 

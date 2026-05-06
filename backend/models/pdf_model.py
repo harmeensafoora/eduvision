@@ -13,6 +13,7 @@ class PDF(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     session_id = Column(String(36), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
     filename = Column(String(512), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     blob_url = Column(Text, nullable=True)
     page_count = Column(Integer, default=0)
     parsed_at = Column(DateTime, nullable=True)
@@ -22,4 +23,4 @@ class PDF(Base):
     weak_topics = Column(JSON, default=list)     # list[str]
     chunks = Column(JSON, default=list)          # list[{text, page}] — stored for AI use
     embeddings = Column(Text, nullable=True)     # JSON-serialised list[list[float]]
-    file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 of fi
+    file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 of file content for dedup

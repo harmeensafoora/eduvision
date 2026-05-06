@@ -130,7 +130,7 @@ def _nodes_to_out(nodes: list[RoadmapNode], db: DBSession) -> list[RoadmapNodeOu
 )
 def get_roadmap(
     session_id: str,
-    depth: str = Query("solid", regex="^(exam|solid|expert)$"),
+    depth: str = Query("solid", pattern="^(exam|solid|expert)$"),
     current_user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):

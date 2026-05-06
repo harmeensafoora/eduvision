@@ -48,15 +48,17 @@ async function startAnalysis() {
     const fd = new FormData();
     S.files.forEach(f => fd.append('files', f));
     const resp = await apiUpload('/session/upload', fd);
+    if (!resp) throw new Error('Session expired — please sign in again.');
     const { session_id } = resp;
     let ready = false;
     for (let i=0; i<90; i++) {
       await new Promise(r=>setTimeout(r,2000));
       try {
         const st = await apiFetch('/session/'+session_id+'/status');
+        if (!st) throw new Error('Session expired — please sign in again.');
         if (st.status==='ready') { ready=true; break; }
         if (st.status==='error') throw new Error('Processing failed on server.');
-      } catch(e) { if (e.message.includes('Processing')) throw e; }
+      } catch(e) { if (e.message.includes('Processing') || e.message.includes('expired')) throw e; }
     }
     if (!ready) throw new Error('Processing timed out.');
     clearInterval(stepTimer);
@@ -65,7 +67,6 @@ async function startAnalysis() {
     await loadSession(session_id);
     prog.style.display = 'none';
     S.files = []; renderFileList();
-    navigate('summary');
   } catch(e) {
     clearInterval(stepTimer);
     prog.style.display = 'none';
@@ -86,6 +87,11 @@ async function loadSessions() {
     }));
   } catch(_) { S.sessions = []; }
   renderSessionList();
+  // Auto-load most recent ready session so summary/roadmap/quiz work immediately
+  if (!S.session) {
+    const ready = S.sessions.find(s => s.status === 'ready');
+    if (ready) loadSession(ready.id, true);
+  }
 }
 
 function renderSessionList() {
@@ -113,11 +119,12 @@ function renderSessionList() {
   list.innerHTML = h;
 }
 
-async function loadSession(id) {
-  showLoader('Loading session…');
+async function loadSession(id, silent) {
+  if (!silent) showLoader('Loading session…');
   try {
     const data = await apiFetch('/session/'+id);
     S.session = { id: data.id, title: data.title, pdfCount: (data.pdfs||[]).length };
+    S.activeTopic = null;
     // Preserve coverage_by_pdf on each topic for the PDF library
     S.topics = (data.topics||[]).map(t => ({
       id: t.id,
@@ -127,6 +134,14 @@ async function loadSession(id) {
       coverage_by_pdf: t.coverage_by_pdf || {},
     }));
     S.sessionPdfs = data.pdfs || [];
-    hideLoader();
+    if (!silent) hideLoader();
     renderTopicSidebar();
-    renderPdfLibrary();   // show PDF library in uploa
+    renderPdfLibrary();
+    if (!silent) navigate('summary');
+  } catch(e) {
+    if (!silent) {
+      hideLoader();
+      showError('uploadError', 'Could not load session: ' + e.message);
+    }
+  }
+}

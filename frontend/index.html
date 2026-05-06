@@ -1,85 +1,1056 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ev. &mdash; Adaptive Learning</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,600;9..144,1,300;9..144,1,400&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="styles/main.css"/>
-  <link rel="stylesheet" href="styles/app.css"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ev. — Learn Without Limits</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,ital,wght@9..144,0,300;9..144,0,400;9..144,0,600;9..144,1,300;9..144,1,400&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ── */
+:root{
+  --bg:#fff;--bg-out:#d4dfc3;--grid:#e8eae4;--ink:#1c1917;
+  --accent:#ffccd5;--accent-h:#ffb3c1;--yellow:#fef08a;--yellow-d:#fde047;
+  --muted:#44403c;--muted2:#78716c;--muted3:#57534e;
+  --green:#16a34a;--green-lt:#dcfce7;--red:#dc2626;--blue:#1d4ed8;
+  --sh-card:0 2px 4px rgba(28,25,23,.04),0 8px 24px rgba(28,25,23,.08),0 24px 48px rgba(28,25,23,.06);
+  --sh-float:0 2px 4px rgba(28,25,23,.04),0 16px 48px rgba(28,25,23,.12),0 48px 96px rgba(28,25,23,.10);
+  --r:20px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:var(--bg-out);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:4px;}
+body{font-family:"DM Sans",sans-serif;background:var(--bg-out);color:var(--ink);padding:1.5rem;overflow-x:hidden;}
+
+/* ── CANVAS ── */
+.canvas{
+  max-width:1360px;margin:0 auto;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+  border:1.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
+  border-radius:14px;overflow:hidden;position:relative;
+}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:.9rem 2.5rem;border-bottom:1.5px solid var(--ink);background:rgba(255,255,255,.96);backdrop-filter:blur(14px);position:sticky;top:0;z-index:300;}
+.logo{font-family:"Fraunces",serif;font-weight:600;font-size:2.1rem;letter-spacing:-.05em;color:var(--ink);text-decoration:none;transition:opacity .2s;}
+.logo:hover{opacity:.7;}
+.nav-links{display:flex;gap:1.8rem;list-style:none;}
+.nav-links a{font-size:.88rem;font-weight:500;color:var(--muted2);text-decoration:none;transition:color .15s;position:relative;}
+.nav-links a::after{content:'';position:absolute;left:0;bottom:-2px;width:0;height:2px;background:var(--yellow-d);transition:width .2s;}
+.nav-links a:hover{color:var(--ink);}
+.nav-links a:hover::after{width:100%;}
+.nav-cta{display:flex;gap:.6rem;}
+
+/* ── BUTTONS ── */
+.btn{font-family:"DM Sans",sans-serif;font-weight:600;font-size:.88rem;padding:.52rem 1.3rem;border-radius:999px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;text-decoration:none;box-shadow:2px 2px 0 var(--ink);transition:transform .14s,box-shadow .14s,background .14s;display:inline-flex;align-items:center;gap:.35rem;}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink);background:var(--accent);}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-dark:hover{background:var(--muted);box-shadow:4px 4px 0 var(--accent);transform:translate(-2px,-2px);}
+.btn-yellow{background:var(--yellow);}
+.btn-yellow:hover{background:var(--yellow-d);box-shadow:4px 4px 0 var(--ink);transform:translate(-2px,-2px);}
+.btn-lg{font-size:1rem;padding:.8rem 1.8rem;box-shadow:3px 3px 0 var(--ink);}
+
+/* ── LAYOUT ── */
+section{border-bottom:1.5px solid var(--ink);position:relative;overflow:visible;}
+.pad{padding:5rem 3.5rem;}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:1.2rem;color:var(--ink);}
+.ub{position:relative;display:inline-block;}
+.ub::after{content:'';position:absolute;left:0;bottom:-3px;width:100%;height:3px;border-radius:2px;}
+.ub-y::after{background:var(--yellow-d);}
+.ub-p::after{background:var(--accent-h);}
+.ub-r::after{background:var(--red);}
+.ub-b::after{background:var(--blue);}
+.sh2{font-family:"Fraunces",serif;font-weight:400;font-size:clamp(2.2rem,3.8vw,3.2rem);letter-spacing:-.04em;line-height:1.08;margin-bottom:1.1rem;}
+.sh2 em{font-style:italic;font-weight:300;}
+.sp{font-size:1rem;color:var(--muted);line-height:1.75;max-width:480px;}
+
+/* ── FLAT FLOATING PANEL (Wispr style) ── */
+.panel{background:#fff;border-radius:var(--r);box-shadow:var(--sh-card);overflow:hidden;border:1px solid rgba(28,25,23,.07);transition:box-shadow .3s,transform .3s;}
+.panel:hover{box-shadow:var(--sh-float);transform:translateY(-3px);}
+.panel.tilt-r{transform:rotate(1.5deg);}
+.panel.tilt-r:hover{transform:rotate(1.5deg) translateY(-4px);box-shadow:var(--sh-float);}
+.panel.tilt-l{transform:rotate(-1.5deg);}
+.panel.tilt-l:hover{transform:rotate(-1.5deg) translateY(-4px);box-shadow:var(--sh-float);}
+.panel-bar{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.1rem;border-bottom:1px solid rgba(28,25,23,.07);background:#fafaf9;}
+.pbar-dots{display:flex;gap:5px;}
+.pbar-dot{width:9px;height:9px;border-radius:50%;}
+.pbar-dot.r{background:#ff5f57;}.pbar-dot.y{background:#febc2e;}.pbar-dot.g{background:#28c840;}
+.pbar-title{font-size:.7rem;font-weight:600;color:var(--muted2);letter-spacing:.3px;}
+.panel-body{padding:1.2rem 1.4rem;}
+
+/* ── MARQUEE ── */
+.mq{overflow:hidden;white-space:nowrap;border-bottom:1.5px solid var(--ink);height:50px;display:flex;align-items:center;}
+.mq.yellow{background:var(--yellow);}
+.mq.pink{background:var(--accent);}
+.mq-track{display:inline-flex;align-items:center;white-space:nowrap;will-change:transform;}
+.mq-track.L{animation:mqL var(--d,38s) linear infinite;}
+.mq-track.R{animation:mqR var(--d,38s) linear infinite;}
+@keyframes mqL{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes mqR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.mq-item{display:inline-flex;align-items:center;font-size:.74rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink);padding:0 2rem;flex-shrink:0;}
+.mq-sep{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--ink);opacity:.3;margin:0 .3rem;flex-shrink:0;}
+
+/* ── DOODLES ── */
+.doodle{position:absolute;pointer-events:none;user-select:none;}
+.float{animation:floatAnim var(--fd,4s) ease-in-out infinite;animation-delay:var(--fdelay,0s);}
+@keyframes floatAnim{0%,100%{transform:translateY(0) rotate(var(--fr,0deg))}50%{transform:translateY(-10px) rotate(var(--fr,0deg))}}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.vis{opacity:1;transform:none;}
+.reveal-l{opacity:0;transform:translateX(-28px);transition:opacity .7s ease,transform .7s ease;}
+.reveal-l.vis{opacity:1;transform:none;}
+.reveal-r{opacity:0;transform:translateX(28px);transition:opacity .7s ease,transform .7s ease;}
+.reveal-r.vis{opacity:1;transform:none;}
+
+/* ────────────────────────────────────────
+   HERO
+──────────────────────────────────────── */
+.hero{padding:6rem 3.5rem 4rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.6rem;border-bottom:1.5px solid var(--ink);position:relative;}
+.hero h1{font-family:"Fraunces",serif;font-weight:400;font-size:clamp(3.2rem,7vw,6.5rem);line-height:.93;letter-spacing:-.05em;max-width:900px;}
+.hero h1 em{font-style:italic;font-weight:300;}
+.hero-hl{position:relative;display:inline-block;z-index:0;}
+.hero-hl::before{content:'';position:absolute;left:-4px;bottom:6px;width:calc(100% + 8px);height:16px;background:var(--yellow);z-index:-1;transform:rotate(-.6deg) scaleX(0);transform-origin:left;border-radius:3px;animation:hlGrow 1s .8s ease forwards;}
+@keyframes hlGrow{to{transform:rotate(-.6deg) scaleX(1)}}
+.hero-sub{font-size:1.15rem;color:var(--muted);max-width:590px;line-height:1.65;}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:var(--yellow);border:1.5px solid var(--ink);border-radius:999px;padding:.35rem 1rem;font-size:.78rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;animation:badgeFloat 3s ease-in-out infinite;}
+@keyframes badgeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.bdot{width:7px;height:7px;border-radius:50%;background:var(--ink);animation:blink 2s infinite;display:inline-block;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ────────────────────────────────────────
+   S1 — PDF COMPARISON (before/after style)
+   Instead of scattered cluster, show a clear
+   split: left = multiple docs listed, right = ev. picks the best and why
+──────────────────────────────────────── */
+.doc-list{display:flex;flex-direction:column;gap:.75rem;}
+.doc-item{
+  display:flex;align-items:center;gap:1rem;
+  padding:.85rem 1.1rem;
+  background:#fff;border-radius:12px;
+  border:1px solid rgba(28,25,23,.08);
+  box-shadow:0 2px 8px rgba(28,25,23,.05);
+  cursor:default;
+  transition:transform .2s,box-shadow .2s,border-color .2s;
+  position:relative;overflow:hidden;
+}
+.doc-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;transition:background .3s;}
+.doc-item:hover{transform:translateX(4px);box-shadow:0 4px 16px rgba(28,25,23,.10);}
+.doc-item.best{border-color:var(--ink);background:#fffdf5;}
+.doc-item.best::before{background:var(--yellow-d);}
+.doc-item:not(.best)::before{background:#e5e7eb;}
+.doc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.doc-info{flex:1;}
+.doc-name{font-weight:700;font-size:.85rem;}
+.doc-sub{font-size:.72rem;color:var(--muted2);margin-top:2px;}
+.doc-badge{font-size:.65rem;font-weight:800;padding:3px 10px;border-radius:999px;white-space:nowrap;border:1px solid rgba(28,25,23,.1);}
+.doc-badge.best{background:var(--yellow-d);color:var(--ink);}
+.doc-badge.mid{background:#f1f5f9;color:var(--muted2);}
+.doc-coverage{height:4px;border-radius:2px;margin-top:6px;background:#f1f5f4;overflow:hidden;}
+.doc-coverage-fill{height:100%;border-radius:2px;background:var(--yellow-d);transition:width 1.4s cubic-bezier(.22,1,.36,1);}
+.doc-item:not(.best) .doc-coverage-fill{background:#d1d5db;}
+
+/* EV insight card */
+.ev-insight{
+  background:var(--ink);color:#fff;border-radius:14px;padding:1.1rem 1.3rem;
+  margin-top:.5rem;font-size:.82rem;line-height:1.6;
+  box-shadow:var(--sh-card);
+  opacity:0;animation:fadeUp .6s 2s ease both;
+}
+.ev-insight strong{color:var(--yellow-d);}
+.ev-star{color:var(--yellow-d);font-size:.9rem;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* scan line */
+.scan-wrap{position:relative;overflow:hidden;}
+.scan-line{position:absolute;left:0;right:0;height:2px;top:0;background:linear-gradient(90deg,transparent,var(--yellow-d),transparent);animation:scanDown 4s 1s ease-in-out infinite;pointer-events:none;}
+@keyframes scanDown{0%{top:0;opacity:0}5%{opacity:.8}90%{opacity:.3}100%{top:100%;opacity:0}}
+
+/* ────────────────────────────────────────
+   S2 — TRANSFORMATION + LANGUAGE
+──────────────────────────────────────── */
+.transform-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:2rem;align-items:start;max-width:1040px;margin:0 auto;}
+.notebook-panel{background:#fff;border-radius:var(--r);box-shadow:var(--sh-card);overflow:hidden;border:1px solid rgba(28,25,23,.07);transition:box-shadow .3s;}
+.notebook-panel:hover{box-shadow:var(--sh-float);}
+.notebook-lines{position:absolute;inset:0;background-image:repeating-linear-gradient(transparent,transparent 31px,rgba(147,197,253,.2) 31px,rgba(147,197,253,.2) 32px);background-position:0 52px;pointer-events:none;}
+.nb-header{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1.2rem;border-bottom:1px solid rgba(28,25,23,.07);background:#fafaf9;font-size:.7rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted2);position:relative;z-index:1;}
+.nb-body{padding:1.2rem 1.4rem;position:relative;z-index:1;min-height:210px;}
+.lang-badge{display:inline-flex;align-items:center;gap:.4rem;background:var(--yellow);border-radius:999px;padding:3px 10px;font-size:.68rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid rgba(28,25,23,.1);transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.ob{display:none;animation:fadeSlide .45s cubic-bezier(.34,1.56,.64,1) both;}
+.ob.active{display:block;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.r-ul{text-decoration:underline;text-decoration-color:var(--red);text-decoration-thickness:2px;}
+.b-box{border:2px solid var(--blue);border-radius:4px;padding:1px 5px;color:var(--blue);font-weight:700;}
+.hl-run{background:rgba(254,240,138,.8);border-radius:3px;padding:0 3px;}
+.arrow-bounce{font-size:2rem;animation:arrBounce 1.2s ease-in-out infinite;display:block;}
+@keyframes arrBounce{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+
+/* ────────────────────────────────────────
+   S3 — VISUALS
+──────────────────────────────────────── */
+.diagram-node{display:flex;align-items:center;gap:.5rem;padding:.4rem .8rem;border-radius:8px;font-size:.74rem;font-weight:600;border:1px solid rgba(28,25,23,.1);width:fit-content;opacity:0;transform:scale(.85);transition:opacity .4s,transform .4s;background:#fff;box-shadow:0 2px 6px rgba(28,25,23,.06);}
+.diagram-node.show{opacity:1;transform:scale(1);}
+.diagram-node.yl{background:#fefce8;}.diagram-node.pk{background:#fce7f3;}
+.diagram-node:hover{transform:scale(1.04)!important;box-shadow:0 4px 12px rgba(28,25,23,.12);}
+.diagram-line{width:2px;height:18px;background:var(--ink);margin-left:22px;transform:scaleY(0);transform-origin:top;transition:transform .3s;}
+.diagram-line.show{transform:scaleY(1);}
+
+/* ────────────────────────────────────────
+   S4 — ROADMAP
+──────────────────────────────────────── */
+.depth-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.depth-tab{padding:.5rem 1.2rem;border-radius:999px;border:1.5px solid var(--ink);background:#fff;font-size:.84rem;font-weight:600;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:all .18s;}
+.depth-tab:hover{background:#fafaf9;transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink);}
+.depth-tab.active{background:var(--yellow);box-shadow:3px 3px 0 var(--ink);transform:translate(-1px,-1px);}
+.rm-wrap{position:relative;padding-left:2.4rem;}
+.rm-wrap::before{content:'';position:absolute;left:11px;top:10px;bottom:10px;width:2px;background:repeating-linear-gradient(to bottom,var(--ink) 0,var(--ink) 5px,transparent 5px,transparent 10px);}
+.rs{position:relative;margin-bottom:.9rem;opacity:0;transform:translateX(-12px);transition:opacity .35s,transform .35s;}
+.rs.vis{opacity:1;transform:none;}
+.rs-dot{position:absolute;left:-2.05rem;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);background:#fff;box-shadow:0 0 0 3px #fff;transition:all .3s;}
+.rs.done .rs-dot{background:var(--yellow-d);}
+.rs.now .rs-dot{background:var(--ink);box-shadow:0 0 0 4px var(--yellow);}
+.rs-card{background:#fff;border-radius:12px;padding:.75rem 1rem;font-size:.85rem;display:flex;align-items:center;gap:.75rem;box-shadow:var(--sh-card);border:1px solid rgba(28,25,23,.07);transition:transform .2s,box-shadow .2s;}
+.rs-card:hover{transform:translateX(4px);box-shadow:var(--sh-float);}
+.rs.now .rs-card{background:var(--yellow);box-shadow:0 4px 16px rgba(253,224,71,.4);}
+.rs.locked .rs-card{opacity:.4;}
+.rs-ico{font-size:1rem;flex-shrink:0;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:rgba(28,25,23,.05);}
+.rs-label{font-weight:700;font-size:.85rem;}
+.rs-sub{font-size:.72rem;color:var(--muted3);margin-top:2px;}
+/* Quiz CTA within each roadmap step */
+.rs-quiz-btn{
+  margin-left:auto;font-size:.7rem;font-weight:700;padding:3px 10px;
+  border-radius:999px;border:1.5px solid var(--ink);
+  background:#fff;cursor:pointer;
+  box-shadow:1px 1px 0 var(--ink);
+  transition:all .15s;white-space:nowrap;flex-shrink:0;
+}
+.rs-quiz-btn:hover{background:var(--yellow);transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--ink);}
+.rs.locked .rs-quiz-btn{display:none;}
+
+/* ────────────────────────────────────────
+   S5 — QUIZ (fully interactive)
+──────────────────────────────────────── */
+.qformat-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.qf-tab{padding:.4rem 1rem;border-radius:999px;border:1.5px solid var(--ink);background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:all .15s;}
+.qf-tab:hover{background:#fafaf9;transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink);}
+.qf-tab.active{background:var(--yellow-d);box-shadow:3px 3px 0 var(--ink);transform:translate(-1px,-1px);}
+
+.quiz-panel{background:#fff;border-radius:var(--r);box-shadow:var(--sh-float);overflow:hidden;border:1px solid rgba(28,25,23,.07);transition:box-shadow .3s;}
+.quiz-header{background:var(--accent);padding:.85rem 1.2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(28,25,23,.07);}
+.quiz-body{padding:1.2rem 1.4rem;}
+
+/* MCQ */
+.qopt{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;border-radius:10px;margin-bottom:.55rem;font-size:.88rem;cursor:pointer;transition:all .15s;border:1.5px solid rgba(28,25,23,.1);background:#fafafa;}
+.qopt:hover{background:#f5f5f4;border-color:var(--ink);transform:translateX(3px);}
+.qopt.correct{background:var(--green-lt);border-color:var(--green);font-weight:600;animation:correctPop .4s cubic-bezier(.34,1.56,.64,1);}
+.qopt.wrong{background:#fee2e2;border-color:var(--red);}
+.qcirc{width:27px;height:27px;border-radius:50%;border:1.5px solid rgba(28,25,23,.2);background:#fff;display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;flex-shrink:0;}
+.correct .qcirc{background:var(--green);color:#fff;border-color:var(--green);}
+@keyframes correctPop{from{transform:scale(.96)}to{transform:scale(1)}}
+
+/* True/False */
+.tf-opts{display:flex;gap:1rem;margin-top:1rem;}
+.tf-btn{flex:1;padding:1.2rem;border-radius:12px;border:1.5px solid rgba(28,25,23,.12);background:#fafafa;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;}
+.tf-btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(28,25,23,.1);}
+.tf-btn.tf-true:hover{background:var(--green-lt);border-color:var(--green);}
+.tf-btn.tf-false:hover{background:#fee2e2;border-color:var(--red);}
+.tf-btn.selected-t{background:var(--green-lt);border-color:var(--green);color:var(--green);}
+.tf-btn.selected-f{background:#fee2e2;border-color:var(--red);color:var(--red);}
+
+/* One Word */
+.ow-input{width:100%;margin-top:1rem;padding:.85rem 1.1rem;border-radius:10px;border:1.5px solid rgba(28,25,23,.15);font-family:"DM Sans",sans-serif;font-size:1rem;outline:none;transition:border-color .2s,box-shadow .2s;}
+.ow-input:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(28,25,23,.08);}
+.ow-submit{margin-top:.75rem;width:100%;}
+
+/* One Sentence */
+.os-textarea{width:100%;margin-top:1rem;padding:.85rem 1.1rem;border-radius:10px;border:1.5px solid rgba(28,25,23,.15);font-family:"DM Sans",sans-serif;font-size:.9rem;outline:none;resize:vertical;min-height:80px;transition:border-color .2s,box-shadow .2s;}
+.os-textarea:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(28,25,23,.08);}
+
+/* Match */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:1rem;}
+.match-col{display:flex;flex-direction:column;gap:.5rem;}
+.match-item{padding:.65rem .9rem;border-radius:8px;font-size:.82rem;font-weight:600;border:1.5px solid rgba(28,25,23,.1);background:#fff;cursor:pointer;transition:all .2s;}
+.match-item:hover{border-color:var(--ink);background:#fffdf5;transform:scale(1.02);}
+.match-item.selected{background:var(--yellow);border-color:var(--ink);}
+.match-item.matched{background:var(--green-lt);border-color:var(--green);cursor:default;}
+
+/* Feedback box */
+.q-feedback{margin-top:.8rem;border-radius:10px;padding:.7rem 1rem;font-size:.82rem;font-weight:600;display:none;}
+.q-feedback.show{display:block;animation:fadeSlide .35s ease both;}
+.q-feedback.correct{background:var(--green-lt);color:var(--green);}
+.q-feedback.wrong{background:#fee2e2;color:var(--red);}
+
+/* Weak area bars */
+.w-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;font-size:.82rem;}
+.w-lbl{width:130px;font-weight:500;flex-shrink:0;}
+.w-bg{flex:1;height:8px;background:#f0efec;border-radius:999px;overflow:hidden;}
+.w-bar{height:100%;border-radius:999px;width:0;transition:width 1.4s cubic-bezier(.22,1,.36,1);}
+.w-pct{width:32px;text-align:right;font-size:.78rem;font-weight:700;}
+
+/* ────────────────────────────────────────
+   S6 — ACCESSIBILITY — inclusive tag cloud
+──────────────────────────────────────── */
+.learner-cloud{display:flex;flex-wrap:wrap;gap:.65rem;margin:2rem 0;}
+.learner-tag{
+  padding:.5rem 1.1rem;border-radius:999px;
+  border:1.5px solid var(--ink);background:#fff;
+  font-size:.85rem;font-weight:600;
+  box-shadow:2px 2px 0 var(--ink);
+  cursor:default;
+  transition:transform .15s,box-shadow .15s,background .15s;
+}
+.learner-tag:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink);background:var(--yellow);}
+.learner-tag.pink{background:var(--accent);}
+.learner-tag.pink:hover{background:var(--accent-h);}
+
+.access-features{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2rem;}
+.af-item{display:flex;align-items:flex-start;gap:.85rem;padding:1rem 1.1rem;background:#fff;border-radius:14px;box-shadow:var(--sh-card);border:1px solid rgba(28,25,23,.07);transition:transform .2s,box-shadow .2s;}
+.af-item:hover{transform:translateY(-3px);box-shadow:var(--sh-float);}
+.af-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;}
+.af-title{font-weight:700;font-size:.88rem;margin-bottom:.3rem;}
+.af-desc{font-size:.78rem;color:var(--muted3);line-height:1.6;}
+
+/* ── CTA ── */
+.cta{padding:6rem 3.5rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.6rem;background:var(--yellow);border-top:1.5px solid var(--ink);position:relative;overflow:hidden;}
+.cta-h{font-family:"Fraunces",serif;font-weight:400;font-size:clamp(2.8rem,5.5vw,5rem);letter-spacing:-.05em;line-height:.95;}
+.cta-h em{font-style:italic;font-weight:300;}
+
+/* ── FOOTER ── */
+footer{background:var(--ink);padding:3rem 3.5rem 2rem;}
+.ft{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem;padding-bottom:2rem;border-bottom:1px solid #2a2a2a;margin-bottom:1.5rem;}
+.ft-brand{font-family:"Fraunces",serif;font-size:1.8rem;font-weight:600;color:#fff;letter-spacing:-.05em;margin-bottom:.6rem;}
+.ft-tag{font-size:.82rem;color:#555;line-height:1.6;}
+.ft-col h4{font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;margin-bottom:.9rem;}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+.ft-col a{font-size:.82rem;color:#555;text-decoration:none;transition:color .15s;}
+.ft-col a:hover{color:#bbb;}
+.ft-bot{display:flex;justify-content:space-between;font-size:.75rem;color:#444;}
+</style>
 </head>
 <body>
-  <div class="canvas">
+<div class="canvas">
 
-    <!-- ══ GLOBAL LOADER ══ -->
-    <div class="ev-loader-overlay" id="globalLoader" style="display:none">
-      <div class="ev-loader">ev.</div>
-      <div class="ev-loader-sub" id="loaderMsg">Loading&hellip;</div>
-      <div class="ev-loader-steps" id="loaderSteps"></div>
+<!-- ── NAV ── -->
+<nav>
+  <a href="#" class="logo">ev.</a>
+  <ul class="nav-links">
+    <li><a href="#s1">Compare</a></li>
+    <li><a href="#s2">Translate</a></li>
+    <li><a href="#s3">Visuals</a></li>
+    <li><a href="#s4">Roadmap</a></li>
+    <li><a href="#s5">Quiz</a></li>
+    <li><a href="#s6">Accessibility</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a href="app.html" class="btn">Sign in</a>
+    <a href="app.html" class="btn btn-dark">Get started &rarr;</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <!-- doodles -->
+  <svg class="doodle float" style="top:50px;left:60px;width:80px;opacity:.14;--fr:-5deg;--fd:5s" viewBox="0 0 80 50" fill="none"><path d="M5 40 Q15 5 30 25 Q45 45 60 15 Q75 0 85 20" stroke="#1c1917" stroke-width="2.5" stroke-linecap="round"/></svg>
+  <svg class="doodle float" style="top:45px;right:80px;width:58px;opacity:.16;--fr:15deg;--fd:6s;--fdelay:-2s" viewBox="0 0 58 58"><polygon points="29,3 35,20 54,20 39,32 45,50 29,38 13,50 19,32 4,20 23,20" fill="#fde047" stroke="#1c1917" stroke-width="1.5"/></svg>
+  <svg class="doodle" style="bottom:80px;left:110px;width:50px;opacity:.11" viewBox="0 0 50 50" fill="none"><circle cx="25" cy="25" r="22" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 4"/></svg>
+  <svg class="doodle float" style="bottom:90px;right:90px;width:70px;opacity:.12;--fr:0deg;--fd:4.5s;--fdelay:-1s" viewBox="0 0 70 24" fill="none"><path d="M5 8 Q35 2 65 8" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round"/><path d="M5 16 Q35 10 65 16" stroke="#1d4ed8" stroke-width="2.5" stroke-linecap="round" opacity=".45"/></svg>
+
+  <div class="hero-badge"><span class="bdot"></span> Now in Beta &mdash; Free for students</div>
+  <h1>Don't just read,<br/><span class="hero-hl"><em>actually understand.</em></span></h1>
+  <p class="hero-sub">Upload any study material. EduVision finds the best source, simplifies it, translates it, builds your roadmap, and quizzes you until it sticks.</p>
+  <div style="display:flex;gap:.9rem;flex-wrap:wrap;justify-content:center">
+    <a href="app.html" class="btn btn-yellow btn-lg">Start learning free &rarr;</a>
+    <a href="#s1" class="btn btn-lg">See how it works</a>
+  </div>
+  <p style="font-size:.8rem;color:var(--muted2)">Free to start &middot; No credit card</p>
+</section>
+
+<!-- ── MARQUEE 1 ── -->
+<div class="mq yellow">
+  <div class="mq-track L" style="--d:36s">
+    <span class="mq-item">PDF Intelligence<span class="mq-sep"></span></span><span class="mq-item">Visual Explainers<span class="mq-sep"></span></span><span class="mq-item">Adaptive Quizzes<span class="mq-sep"></span></span><span class="mq-item">50+ Languages<span class="mq-sep"></span></span><span class="mq-item">Learning Roadmaps<span class="mq-sep"></span></span><span class="mq-item">Spaced Repetition<span class="mq-sep"></span></span><span class="mq-item">Weak Area Detection<span class="mq-sep"></span></span><span class="mq-item">All Learner Types<span class="mq-sep"></span></span><span class="mq-item">PDF Intelligence<span class="mq-sep"></span></span><span class="mq-item">Visual Explainers<span class="mq-sep"></span></span><span class="mq-item">Adaptive Quizzes<span class="mq-sep"></span></span><span class="mq-item">50+ Languages<span class="mq-sep"></span></span><span class="mq-item">Learning Roadmaps<span class="mq-sep"></span></span><span class="mq-item">Spaced Repetition<span class="mq-sep"></span></span><span class="mq-item">Weak Area Detection<span class="mq-sep"></span></span><span class="mq-item">All Learner Types<span class="mq-sep"></span></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+  S1 — PDF COMPARISON
+  Clear: left = your uploaded docs, right = EV's verdict
+══════════════════════════════════════ -->
+<section id="s1">
+  <div class="pad split">
+    <div class="reveal-l">
+      <span class="tag"><span class="ub ub-y">Document Intelligence</span></span>
+      <h2 class="sh2">Upload your PDFs.<br/>We pick the <em>best source</em><br/>for every topic.</h2>
+      <p class="sp" style="margin-bottom:1.8rem">Drop multiple materials &mdash; textbooks, papers, notes. EduVision reads them all, scores each one per topic, and tells you exactly which to open and why. No more guessing.</p>
+      <a href="app.html" class="btn btn-dark">Try document compare &rarr;</a>
     </div>
 
-    <!-- ══ LANDING / AUTH VIEW ══ -->
-    <div class="auth-view" id="authView">
-      <div class="auth-card panel no-hover" style="padding:2.5rem">
+    <div class="reveal-r">
+      <!-- Input: list of uploaded docs -->
+      <div style="margin-bottom:.75rem;font-size:.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2)">You uploaded</div>
+      <div class="scan-wrap doc-list" style="position:relative">
+        <div class="scan-line"></div>
 
-        <!-- Hero -->
-        <div style="text-align:center;margin-bottom:2rem">
-          <div class="auth-logo" style="margin-bottom:.5rem">ev.</div>
-          <div style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:1.1rem;color:var(--muted);margin-bottom:.5rem">
-            Upload any PDF. Actually understand it.
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dbeafe">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" stroke="#1d4ed8" stroke-width="1.8"/><path d="M8 7h8M8 11h8M8 15h5" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round"/></svg>
           </div>
-          <div style="font-size:.88rem;color:var(--muted2);line-height:1.6">
-            AI-powered summaries, adaptive quizzes, and personalized roadmaps.
+          <div class="doc-info">
+            <div class="doc-name">Lippincott's Illustrated</div>
+            <div class="doc-sub">620 pages &middot; Biochemistry</div>
+            <div class="doc-coverage"><div class="doc-coverage-fill" data-w="55" style="width:0%"></div></div>
           </div>
+          <span class="doc-badge mid">Beginner</span>
         </div>
 
-        <!-- Google Sign-In Button -->
-        <button class="google-btn" onclick="googleLogin()">
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          Continue with Google
-        </button>
-
-        <!-- Divider -->
-        <div class="auth-divider">or</div>
-
-        <!-- Dev-Login Fallback Button -->
-        <button class="btn btn-dark" style="width:100%;justify-content:center;padding:.85rem" onclick="demoLogin()">
-          Try the demo &rarr;
-        </button>
-
-        <!-- Privacy Note -->
-        <div class="auth-note">
-          Your data is encrypted and never used for AI training.
+        <div class="doc-item best">
+          <div class="doc-icon" style="background:#fef9c3">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" stroke="#92400e" stroke-width="1.8"/><path d="M8 7h8M8 11h8M8 15h5" stroke="#92400e" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="6" r="4" fill="#fde047" stroke="#1c1917" stroke-width="1.2"/><path d="M18 4v2l1 1" stroke="#1c1917" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name">Harper's Biochemistry &mdash; Ch. 8</div>
+            <div class="doc-sub">Enzyme Kinetics &middot; High coverage</div>
+            <div class="doc-coverage"><div class="doc-coverage-fill" data-w="94" style="width:0%"></div></div>
+          </div>
+          <span class="doc-badge best">&#9733; Best</span>
         </div>
 
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dcfce7">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" stroke="#16a34a" stroke-width="1.8"/><path d="M8 7h8M8 11h8M8 15h5" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name">Stryer Biochemistry 8e</div>
+            <div class="doc-sub">1100 pages &middot; In-depth reference</div>
+            <div class="doc-coverage"><div class="doc-coverage-fill" data-w="70" style="width:0%"></div></div>
+          </div>
+          <span class="doc-badge mid">Advanced</span>
+        </div>
+
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#f3e8ff">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" stroke="#7c3aed" stroke-width="1.8"/><path d="M8 7h8M8 11h8M8 15h5" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="doc-info">
+            <div class="doc-name">Marks' Basic Medical Biochem.</div>
+            <div class="doc-sub">Clinical focus &middot; USMLE</div>
+            <div class="doc-coverage"><div class="doc-coverage-fill" data-w="48" style="width:0%"></div></div>
+          </div>
+          <span class="doc-badge mid">Clinical</span>
+        </div>
+      </div>
+
+      <!-- EV verdict -->
+      <div class="ev-insight">
+        <span class="ev-star">&#10022;</span> <strong>EduVision recommends:</strong> For Enzyme Kinetics, open <strong>Harper's Ch. 8</strong> first &mdash; it has the highest topic coverage at your level. Stryer is better for deep mechanism questions. Skip Lippincott for this topic.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+  S2 — TRANSFORMATION + LANGUAGE
+══════════════════════════════════════ -->
+<section id="s2">
+  <div class="pad">
+    <div style="text-align:center;margin-bottom:3rem" class="reveal">
+      <span class="tag"><span class="ub ub-p">The EduVision Effect</span></span>
+      <h2 class="sh2" style="max-width:700px;margin:0 auto 1rem">Dense jargon in.<br/><em>Crystal clarity out</em> &mdash; in your language.</h2>
+      <p class="sp" style="max-width:560px;margin:0 auto">Watch a complex paragraph transform into structured knowledge, then shift through languages in real time.</p>
+    </div>
+
+    <div class="transform-grid">
+      <div class="notebook-panel reveal-l" style="position:relative">
+        <div class="notebook-lines"></div>
+        <div class="nb-header">
+          <span>Raw PDF Extract</span>
+          <span style="color:var(--red);font-weight:700;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block"></span> Unprocessed</span>
+        </div>
+        <div class="nb-body">
+          <p style="font-size:.84rem;line-height:1.9;color:#a8a29e;font-style:italic">The phosphorylation cascade initiates when extracellular ligands bind to receptor tyrosine kinases, inducing conformational changes that facilitate autophosphorylation of specific tyrosine residues, creating docking sites for SH2 domain-containing proteins and propagating the mitogenic signal through Ras-MAPK pathway activation...</p>
+          <div style="margin-top:.8rem;font-size:.72rem;color:var(--red);font-style:italic">← What does any of this mean?</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding-top:5rem;color:var(--muted2);font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase" class="reveal">
+        <span class="arrow-bounce">&rarr;</span>
+        <span>EduVision</span>
+      </div>
+
+      <div class="notebook-panel reveal-r" style="position:relative">
+        <div class="notebook-lines"></div>
+        <div class="nb-header">
+          <span>EduVision Output</span>
+          <span class="lang-badge" id="langBadge">&#127468;&#127463; English</span>
+        </div>
+        <div class="nb-body">
+          <div class="ob active" id="ob1" style="font-size:.84rem;line-height:1.85">
+            <p style="font-weight:700;margin-bottom:.5rem">&#x25B6; Signal Cascade &mdash; Simplified:</p>
+            <p>&#9312; <span class="r-ul">Ligand</span> binds receptor on cell surface</p>
+            <p>&#9313; Receptor <span class="b-box">phosphorylates</span> itself</p>
+            <p>&#9314; SH2 proteins dock &rarr; <span class="hl-run">Ras activates</span></p>
+            <p>&#9315; MAPK pathway fires &rarr; gene expression changes</p>
+            <p style="margin-top:.7rem;font-size:.74rem;color:var(--muted2)">&#x25A0; Diagram ready &nbsp;&middot;&nbsp; &#x25A0; Quiz generated</p>
+          </div>
+          <div class="ob" id="ob2" style="font-size:.84rem;line-height:1.85">
+            <p style="font-weight:700;margin-bottom:.5rem">&#x25B6; &#x0938;&#x0902;&#x0915;&#x0947;&#x0924; &#x0915;&#x0948;&#x0938;&#x094D;&#x0915;&#x0947;&#x0921; &mdash; &#x0938;&#x0930;&#x0932; &#x0930;&#x0942;&#x092A; &#x092E;&#x0947;&#x0902;:</p>
+            <p>&#9312; <span class="r-ul">&#x0932;&#x093F;&#x0917;&#x0948;&#x0902;&#x0921;</span> &#x0915;&#x094B;&#x0936;&#x093F;&#x0915;&#x093E; &#x0938;&#x0924;&#x0939; &#x092A;&#x0930; &#x0930;&#x093F;&#x0938;&#x0947;&#x092A;&#x094D;&#x091F;&#x0930; &#x0938;&#x0947; &#x091C;&#x0941;&#x095C;&#x0924;&#x093E; &#x0939;&#x0948;</p>
+            <p>&#9313; &#x0930;&#x093F;&#x0938;&#x0947;&#x092A;&#x094D;&#x091F;&#x0930; <span class="b-box">&#x092B;&#x093C;&#x0949;&#x0938;&#x094D;&#x092B;&#x094B;&#x0930;&#x0940;&#x0932;&#x0947;&#x091F;</span> &#x0939;&#x094B;&#x0924;&#x093E; &#x0939;&#x0948;</p>
+            <p>&#9314; SH2 &#x092A;&#x094D;&#x0930;&#x094B;&#x091F;&#x0940;&#x0928; &rarr; <span class="hl-run">Ras &#x0938;&#x0915;&#x094D;&#x0930;&#x093F;&#x092F;</span></p>
+            <p>&#9315; MAPK &rarr; &#x091C;&#x0940;&#x0928; &#x0905;&#x092D;&#x093F;&#x0935;&#x094D;&#x092F;&#x0915;&#x094D;&#x0924;&#x093F; &#x092C;&#x0926;&#x0932;&#x0924;&#x0940; &#x0939;&#x0948;</p>
+            <p style="margin-top:.7rem;font-size:.74rem;color:var(--muted2)">&#x25A0; &#x091A;&#x093F;&#x0924;&#x094D;&#x0930; &#x0924;&#x0948;&#x092F;&#x093E;&#x0930; &nbsp;&middot;&nbsp; &#x25A0; &#x092A;&#x094D;&#x0930;&#x0936;&#x094D;&#x0928;&#x094B;&#x0924;&#x094D;&#x0924;&#x0930;&#x0940; &#x0924;&#x0948;&#x092F;&#x093E;&#x0930;</p>
+          </div>
+          <div class="ob" id="ob3" style="font-size:.84rem;line-height:1.85">
+            <p style="font-weight:700;margin-bottom:.5rem">&#x25B6; Cascada de se&ntilde;alizaci&oacute;n &mdash; Simplificada:</p>
+            <p>&#9312; El <span class="r-ul">ligando</span> se une al receptor</p>
+            <p>&#9313; El receptor se <span class="b-box">autofosforila</span></p>
+            <p>&#9314; Prote&iacute;nas SH2 &rarr; <span class="hl-run">Ras se activa</span></p>
+            <p>&#9315; Ruta MAPK &rarr; regulaci&oacute;n g&eacute;nica</p>
+            <p style="margin-top:.7rem;font-size:.74rem;color:var(--muted2)">&#x25A0; Diagrama listo &nbsp;&middot;&nbsp; &#x25A0; Quiz generado</p>
+          </div>
+          <div class="ob" id="ob4" style="font-size:.84rem;line-height:1.85;direction:rtl;text-align:right">
+            <p style="font-weight:700;margin-bottom:.5rem">&#x25B6; &#x633;&#x644;&#x633;&#x644;&#x629; &#x627;&#x644;&#x625;&#x634;&#x627;&#x631;&#x627;&#x62A; &mdash; &#x645;&#x628;&#x633;&#x651;&#x637;&#x629;:</p>
+            <p>&#9312; <span class="r-ul">&#x627;&#x644;&#x631;&#x627;&#x628;&#x637;</span> &#x64A;&#x62A;&#x635;&#x644; &#x628;&#x627;&#x644;&#x645;&#x633;&#x62A;&#x642;&#x628;&#x644; &#x639;&#x644;&#x649; &#x627;&#x644;&#x62E;&#x644;&#x64A;&#x629;</p>
+            <p>&#9313; &#x627;&#x644;&#x645;&#x633;&#x62A;&#x642;&#x628;&#x644; <span class="b-box">&#x64A;&#x641;&#x633;&#x641;&#x631;</span> &#x646;&#x641;&#x633;&#x647; &#x62A;&#x644;&#x642;&#x627;&#x626;&#x64A;&#x64B;&#x627;</p>
+            <p>&#9314; &#x628;&#x631;&#x648;&#x62A;&#x64A;&#x646;&#x627;&#x62A; SH2 &rarr; <span class="hl-run">Ras &#x64A;&#x646;&#x634;&#x651;&#x637;</span></p>
+            <p>&#9315; &#x645;&#x633;&#x627;&#x631; MAPK &rarr; &#x62A;&#x646;&#x638;&#x64A;&#x645; &#x627;&#x644;&#x62C;&#x64A;&#x646;&#x627;&#x62A;</p>
+          </div>
+          <div class="ob" id="ob5" style="font-size:.84rem;line-height:1.85">
+            <p style="font-weight:700;margin-bottom:.5rem">&#x25B6; &#x30B7;&#x30B0;&#x30CA;&#x30EB;&#x30AB;&#x30B9;&#x30B1;&#x30FC;&#x30C9; &mdash; &#x308F;&#x304B;&#x308A;&#x3084;&#x3059;&#x304F;:</p>
+            <p>&#9312; <span class="r-ul">&#x30EA;&#x30AC;&#x30F3;&#x30C9;</span>&#x304C;&#x53D7;&#x5BB9;&#x4F53;&#x306B;&#x7D50;&#x5408;</p>
+            <p>&#9313; &#x53D7;&#x5BB9;&#x4F53;&#x304C;&#x81EA;&#x5DF1;<span class="b-box">&#x30EA;&#x30F3;&#x9178;&#x5316;</span></p>
+            <p>&#9314; SH2&#x30BF;&#x30F3;&#x30D1;&#x30AF; &rarr; <span class="hl-run">Ras&#x6D3B;&#x6027;&#x5316;</span></p>
+            <p>&#9315; MAPK&#x30B7;&#x30B0;&#x30CA;&#x30EB; &rarr; &#x9057;&#x4F1D;&#x5B50;&#x767A;&#x73FE;&#x5909;&#x5316;</p>
+          </div>
+        </div>
       </div>
     </div>
 
-  </div><!-- /canvas -->
-
-  <!-- Footer -->
-  <div style="text-align:center;padding:1rem;font-size:.78rem;color:var(--muted2)">
-    ev. &mdash; Learn smarter.
+    <!-- lang pills -->
+    <div style="display:flex;justify-content:center;gap:.6rem;margin-top:2rem;flex-wrap:wrap" class="reveal">
+      <span style="font-size:.8rem;font-weight:600;color:var(--muted2);align-self:center">Instantly in:</span>
+      <span style="background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600;box-shadow:2px 2px 0 var(--ink);cursor:default;transition:all .15s" onmouseover="this.style.background='var(--yellow)'" onmouseout="this.style.background='#fff'">&#127470;&#127475; Hindi</span>
+      <span style="background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600;box-shadow:2px 2px 0 var(--ink);cursor:default;transition:all .15s" onmouseover="this.style.background='var(--yellow)'" onmouseout="this.style.background='#fff'">&#127466;&#127480; Spanish</span>
+      <span style="background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600;box-shadow:2px 2px 0 var(--ink);cursor:default;transition:all .15s" onmouseover="this.style.background='var(--yellow)'" onmouseout="this.style.background='#fff'">&#127467;&#127479; French</span>
+      <span style="background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600;box-shadow:2px 2px 0 var(--ink);cursor:default;transition:all .15s" onmouseover="this.style.background='var(--yellow)'" onmouseout="this.style.background='#fff'">&#127462;&#127466; Arabic</span>
+      <span style="background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600;box-shadow:2px 2px 0 var(--ink);cursor:default;transition:all .15s" onmouseover="this.style.background='var(--yellow)'" onmouseout="this.style.background='#fff'">&#127471;&#127477; Japanese</span>
+      <span style="background:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600;box-shadow:2px 2px 0 var(--ink);cursor:default;transition:all .15s" onmouseover="this.style.background='var(--yellow)'" onmouseout="this.style.background='#fff'">&#127465;&#127466; German</span>
+      <span style="background:var(--ink);color:#fff;border:1.5px solid var(--ink);border-radius:999px;padding:4px 13px;font-size:.74rem;font-weight:600">+44 more</span>
+    </div>
   </div>
+</section>
 
-  <!-- Scripts — order matters -->
-  <script src="js/api.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/auth.js"></script>
-  <script>
-    // Auto-redirect to app.html if already authenticated
-    (function() {
-      const token = localStorage.getItem('ev_token');
-      const user = JSON.parse(localStorage.getItem('ev_user') || 'null');
-      if (token && user) {
-        window.location.href = 'app.html';
-      }
-    })();
-  </script>
+<!-- ── MARQUEE 2 ── -->
+<div class="mq pink">
+  <div class="mq-track R" style="--d:42s">
+    <span class="mq-item">Concept Maps<span class="mq-sep"></span></span><span class="mq-item">Process Diagrams<span class="mq-sep"></span></span><span class="mq-item">Flashcards<span class="mq-sep"></span></span><span class="mq-item">Infographics<span class="mq-sep"></span></span><span class="mq-item">Timeline Views<span class="mq-sep"></span></span><span class="mq-item">Comparison Tables<span class="mq-sep"></span></span><span class="mq-item">Mind Maps<span class="mq-sep"></span></span><span class="mq-item">Concept Maps<span class="mq-sep"></span></span><span class="mq-item">Process Diagrams<span class="mq-sep"></span></span><span class="mq-item">Flashcards<span class="mq-sep"></span></span><span class="mq-item">Infographics<span class="mq-sep"></span></span><span class="mq-item">Timeline Views<span class="mq-sep"></span></span><span class="mq-item">Comparison Tables<span class="mq-sep"></span></span><span class="mq-item">Mind Maps<span class="mq-sep"></span></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+  S3 — VISUALS
+══════════════════════════════════════ -->
+<section id="s3">
+  <div class="pad split">
+    <div style="position:relative" class="reveal-l">
+      <div style="position:absolute;inset:-30px;background:radial-gradient(ellipse at 50% 50%,rgba(254,240,138,.3) 0%,transparent 70%);pointer-events:none;border-radius:40px"></div>
+      <div class="panel" style="position:relative;z-index:1">
+        <div class="panel-bar">
+          <div class="pbar-dots"><div class="pbar-dot r"></div><div class="pbar-dot y"></div><div class="pbar-dot g"></div></div>
+          <span class="pbar-title">ev. &mdash; Visual Mode &middot; Signal Cascade</span>
+          <span style="font-size:.68rem;font-weight:700;background:var(--yellow);border-radius:999px;padding:2px 9px;color:var(--ink)">Live</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:.65rem;color:var(--muted2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:.9rem">Signal Transduction Cascade</p>
+          <div id="diag"></div>
+          <div style="margin-top:.9rem;background:var(--yellow);border-radius:10px;padding:.5rem .9rem;font-size:.72rem;font-weight:700;color:var(--ink)">&#x2022; Tap any node to explore deeper &rarr;</div>
+        </div>
+      </div>
+      <!-- Second overlapping panel -->
+      <div class="panel tilt-r" style="position:absolute;bottom:-24px;right:-28px;width:190px;z-index:2;padding:1rem">
+        <p style="font-size:.62rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Also generated</p>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div style="display:flex;align-items:center;gap:.5rem;font-size:.76rem;font-weight:600"><span style="width:18px;height:18px;border-radius:4px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:.7rem">&#x25A6;</span>Concept map</div>
+          <div style="display:flex;align-items:center;gap:.5rem;font-size:.76rem;font-weight:600"><span style="width:18px;height:18px;border-radius:4px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:.7rem">&#x25A6;</span>Flashcard deck</div>
+          <div style="display:flex;align-items:center;gap:.5rem;font-size:.76rem;font-weight:600"><span style="width:18px;height:18px;border-radius:4px;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:.7rem">&#x25A6;</span>Timeline view</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal-r">
+      <span class="tag"><span class="ub ub-b">Visual Learning</span></span>
+      <h2 class="sh2">Some things just<br/>make sense <em>as a picture.</em></h2>
+      <p class="sp" style="margin-bottom:1.5rem">EduVision auto-generates interactive diagrams, flowcharts, and concept maps from your uploaded material. No manual work &mdash; click any node to drill deeper into that concept.</p>
+      <div style="display:flex;flex-direction:column;gap:.7rem;margin-bottom:1.8rem">
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#fff;border-radius:12px;box-shadow:var(--sh-card);border:1px solid rgba(28,25,23,.07);transition:transform .2s,box-shadow .2s;cursor:default" onmouseover="this.style.transform='translateX(4px)';this.style.boxShadow='var(--sh-float)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--sh-card)'"><span style="width:32px;height:32px;border-radius:9px;background:#fef9c3;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem">&#x2609;</span><div><div style="font-weight:700;font-size:.85rem">Concept Maps</div><div style="font-size:.74rem;color:var(--muted3)">See how ideas connect to each other</div></div></div>
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#fff;border-radius:12px;box-shadow:var(--sh-card);border:1px solid rgba(28,25,23,.07);transition:transform .2s,box-shadow .2s;cursor:default" onmouseover="this.style.transform='translateX(4px)';this.style.boxShadow='var(--sh-float)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--sh-card)'"><span style="width:32px;height:32px;border-radius:9px;background:#dbeafe;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem">&#x2699;</span><div><div style="font-weight:700;font-size:.85rem">Process Diagrams</div><div style="font-size:.74rem;color:var(--muted3)">Step-by-step flows, cycles, pathways</div></div></div>
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:#fff;border-radius:12px;box-shadow:var(--sh-card);border:1px solid rgba(28,25,23,.07);transition:transform .2s,box-shadow .2s;cursor:default" onmouseover="this.style.transform='translateX(4px)';this.style.boxShadow='var(--sh-float)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--sh-card)'"><span style="width:32px;height:32px;border-radius:9px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem">&#x2261;</span><div><div style="font-weight:700;font-size:.85rem">Comparison Tables</div><div style="font-size:.74rem;color:var(--muted3)">Side-by-side for complex topics</div></div></div>
+      </div>
+      <a href="app.html" class="btn">See visual examples &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+  S4 — ROADMAP + DEPTH
+══════════════════════════════════════ -->
+<section id="s4">
+  <div class="pad split">
+    <div class="reveal-l">
+      <span class="tag"><span class="ub ub-y">Your Learning Roadmap</span></span>
+      <h2 class="sh2">We figure out <em>what</em><br/>to study first.</h2>
+      <p class="sp" style="margin-bottom:1.8rem">Tell EduVision what you want to learn. It reads your materials, maps the prerequisites, and builds a personalised step-by-step path &mdash; at exactly the depth you choose.</p>
+
+      <p style="font-weight:700;font-size:.82rem;margin-bottom:.75rem;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2)">How deep do you want to go?</p>
+      <div class="depth-tabs">
+        <div class="depth-tab" onclick="setDepth(0,this)">Just the exam bits</div>
+        <div class="depth-tab active" onclick="setDepth(1,this)">Solid understanding</div>
+        <div class="depth-tab" onclick="setDepth(2,this)">Become an expert</div>
+      </div>
+      <div style="background:var(--yellow);border-radius:10px;padding:.9rem 1.1rem;font-size:.82rem;line-height:1.7;color:var(--muted);border:1.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink)">
+        <strong style="color:var(--ink)">For example &mdash;</strong><br/>
+        &ldquo;Just the exam bits&rdquo; &rarr; high-yield definitions, past paper patterns<br/>
+        &ldquo;Solid understanding&rdquo; &rarr; concepts + mechanisms + problem sets<br/>
+        &ldquo;Become an expert&rdquo; &rarr; research depth, edge cases, adjacent topics
+      </div>
+    </div>
+
+    <div class="reveal-r">
+      <div class="panel">
+        <div class="panel-bar">
+          <div class="pbar-dots"><div class="pbar-dot r"></div><div class="pbar-dot y"></div><div class="pbar-dot g"></div></div>
+          <span class="pbar-title">ev. &middot; Learning Path &mdash; Enzyme Kinetics</span>
+          <span id="depthBadge" style="background:var(--yellow);border-radius:999px;padding:2px 10px;font-size:.65rem;font-weight:700;color:var(--ink)">Solid understanding</span>
+        </div>
+        <div class="panel-body">
+          <div class="rm-wrap" id="roadmapTrack"></div>
+          <div style="margin-top:1rem;display:flex;gap:.75rem;font-size:.74rem;color:var(--muted2);flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--yellow-d);border:1.5px solid var(--ink);display:inline-block"></span>Done</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--ink);display:inline-block;box-shadow:0 0 0 3px var(--yellow)"></span>Now</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fff;border:1.5px solid var(--ink);display:inline-block"></span>Next</span>
+            <span style="display:flex;align-items:center;gap:4px;opacity:.4"><span style="width:10px;height:10px;border-radius:50%;background:#fff;border:1.5px solid #bbb;display:inline-block"></span>Locked</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+  S5 — QUIZ (fully interactive formats)
+══════════════════════════════════════ -->
+<section id="s5">
+  <div class="pad split" style="direction:rtl">
+    <div style="direction:ltr;position:relative" class="reveal-l">
+      <div style="position:absolute;inset:-20px;background:radial-gradient(ellipse at 50% 50%,rgba(255,204,213,.28) 0%,transparent 70%);pointer-events:none;border-radius:40px"></div>
+      <div class="quiz-panel" style="position:relative;z-index:1">
+        <div class="quiz-header">
+          <span style="font-size:.88rem;font-weight:700">Enzyme Kinetics Quiz</span>
+          <span style="background:#fff;border-radius:999px;padding:3px 12px;font-size:.72rem;font-weight:700;border:1px solid rgba(28,25,23,.1)">Intermediate</span>
+        </div>
+        <div class="quiz-body">
+          <!-- Format tabs -->
+          <div class="qformat-tabs" id="qformatTabs">
+            <div class="qf-tab active" onclick="switchFormat('mcq',this)">Multiple Choice</div>
+            <div class="qf-tab" onclick="switchFormat('tf',this)">True / False</div>
+            <div class="qf-tab" onclick="switchFormat('ow',this)">One Word</div>
+            <div class="qf-tab" onclick="switchFormat('os',this)">One Sentence</div>
+            <div class="qf-tab" onclick="switchFormat('match',this)">Match</div>
+          </div>
+
+          <p id="qQuestion" style="font-size:.9rem;font-weight:700;line-height:1.55;margin-bottom:1rem"></p>
+
+          <!-- MCQ -->
+          <div id="fmtMCQ">
+            <div class="qopt" onclick="answerMCQ(this,false)"><div class="qcirc">A</div>Vmax only</div>
+            <div class="qopt" onclick="answerMCQ(this,true)"><div class="qcirc">B</div>[S] &times; (Vmax / Km)</div>
+            <div class="qopt" onclick="answerMCQ(this,false)"><div class="qcirc">C</div>Km alone</div>
+            <div class="qopt" onclick="answerMCQ(this,false)"><div class="qcirc">D</div>1 / Vmax</div>
+            <div class="q-feedback" id="fbMCQ"></div>
+          </div>
+
+          <!-- True / False -->
+          <div id="fmtTF" style="display:none">
+            <div class="tf-opts">
+              <button class="tf-btn tf-true" onclick="answerTF(this,true)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                True
+              </button>
+              <button class="tf-btn tf-false" onclick="answerTF(this,false)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                False
+              </button>
+            </div>
+            <div class="q-feedback" id="fbTF"></div>
+          </div>
+
+          <!-- One Word -->
+          <div id="fmtOW" style="display:none">
+            <input type="text" class="ow-input" id="owInput" placeholder="Type your answer..." oninput="resetOWFeedback()"/>
+            <button class="btn btn-dark ow-submit" onclick="answerOW()">Submit answer &rarr;</button>
+            <div class="q-feedback" id="fbOW"></div>
+          </div>
+
+          <!-- One Sentence -->
+          <div id="fmtOS" style="display:none">
+            <textarea class="os-textarea" id="osInput" placeholder="Explain in one sentence..."></textarea>
+            <button class="btn btn-dark" style="margin-top:.6rem;width:100%" onclick="answerOS()">Submit &rarr;</button>
+            <div class="q-feedback" id="fbOS"></div>
+          </div>
+
+          <!-- Match -->
+          <div id="fmtMatch" style="display:none">
+            <p style="font-size:.74rem;color:var(--muted2);margin-bottom:.5rem">Select a term, then select its match.</p>
+            <div class="match-grid">
+              <div class="match-col" id="matchLeft"></div>
+              <div class="match-col" id="matchRight"></div>
+            </div>
+            <div class="q-feedback" id="fbMatch"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="direction:ltr" class="reveal-r">
+      <span class="tag"><span class="ub ub-p">Adaptive Quizzes</span></span>
+      <h2 class="sh2">Quizzes that find <em>exactly</em><br/>where you're stuck.</h2>
+      <p class="sp" style="margin-bottom:2rem">Five question formats, three difficulty levels &mdash; all generated from your uploaded material. EduVision tracks every answer, maps your weak spots, and drills those specifically next session.</p>
+      <div class="panel" style="padding:1.4rem;margin-bottom:1.2rem">
+        <p style="font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:1rem">Your performance snapshot</p>
+        <div id="weakBars">
+          <div class="w-row"><span class="w-lbl">Km interpretation</span><div class="w-bg"><div class="w-bar" style="background:var(--yellow-d)" data-w="72"></div></div><span class="w-pct">72%</span></div>
+          <div class="w-row"><span class="w-lbl">Inhibition types</span><div class="w-bg"><div class="w-bar" style="background:var(--accent)" data-w="44"></div></div><span class="w-pct" style="color:var(--red)">44%</span></div>
+          <div class="w-row"><span class="w-lbl">Enzyme structure</span><div class="w-bg"><div class="w-bar" style="background:#86efac" data-w="88"></div></div><span class="w-pct">88%</span></div>
+          <div class="w-row"><span class="w-lbl">Vmax &amp; catalysis</span><div class="w-bg"><div class="w-bar" style="background:var(--accent)" data-w="55"></div></div><span class="w-pct" style="color:var(--red)">55%</span></div>
+        </div>
+        <div style="margin-top:.9rem;background:var(--yellow);border-radius:8px;padding:.65rem .9rem;font-size:.78rem;color:var(--muted)">
+          <strong style="color:var(--ink)">&#x2726; Next quiz focus:</strong> Inhibition types &amp; Vmax &mdash; EduVision will drill these next session.
+        </div>
+      </div>
+      <a href="app.html" class="btn btn-dark">Take a quiz &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+  S6 — ACCESSIBILITY
+══════════════════════════════════════ -->
+<section id="s6" style="border-bottom:none">
+  <div class="pad">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:start">
+      <div class="reveal-l">
+        <span class="tag"><span class="ub ub-r">Built for Every Learner</span></span>
+        <h2 class="sh2">Knowledge shouldn't come<br/>with a <em>format barrier.</em></h2>
+        <p class="sp">EduVision is built on one belief: everyone learns differently, and that's not a problem &mdash; it's just information. We adapt to you, not the other way around.</p>
+
+        <div style="display:inline-flex;align-items:center;gap:.5rem;background:var(--yellow);border:1.5px solid var(--ink);border-radius:999px;padding:.35rem 1rem;font-size:.78rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-top:1.2rem;margin-bottom:.8rem"><span class="bdot"></span> Coming soon</div>
+
+        <div class="learner-cloud" style="opacity:.45;pointer-events:none">
+          <span class="learner-tag">ADHD</span>
+          <span class="learner-tag pink">Dyslexia</span>
+          <span class="learner-tag">Autism spectrum</span>
+          <span class="learner-tag">Visual learners</span>
+          <span class="learner-tag pink">Auditory learners</span>
+          <span class="learner-tag">Non-native speakers</span>
+          <span class="learner-tag">Dyscalculia</span>
+          <span class="learner-tag pink">Verbal learners</span>
+          <span class="learner-tag">Reading &amp; writing preference</span>
+          <span class="learner-tag">Kinaesthetic learners</span>
+        </div>
+
+        <p style="font-size:.82rem;color:var(--muted2);line-height:1.65;max-width:440px">We're building personalised adaptation so EduVision will customise every summary, quiz, and visual to match how you learn best. Stay tuned.</p>
+      </div>
+
+      <div class="reveal-r">
+        <div class="access-features">
+          <div class="af-item">
+            <div class="af-icon" style="background:#fef9c3">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="#92400e" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="#92400e" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <div><div class="af-title">Audio narration</div><div class="af-desc">Every output read aloud in your language</div></div>
+          </div>
+          <div class="af-item">
+            <div class="af-icon" style="background:#dbeafe">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="#1d4ed8" stroke-width="1.8"/><path d="M8 12h8M8 8h5M8 16h6" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <div><div class="af-title">Chunked summaries</div><div class="af-desc">Short, focused &mdash; no walls of text</div></div>
+          </div>
+          <div class="af-item">
+            <div class="af-icon" style="background:#dcfce7">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.5 7.1 18.2l.9-5.5-4-3.9 5.5-.8L12 3z" stroke="#16a34a" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            </div>
+            <div><div class="af-title">Visual diagrams</div><div class="af-desc">Auto-generated from any topic</div></div>
+          </div>
+          <div class="af-item">
+            <div class="af-icon" style="background:#fce7f3">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#9d174d" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#9d174d" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+            <div><div class="af-title">Personalised style</div><div class="af-desc">Adapts to your learner profile</div></div>
+          </div>
+          <div class="af-item" style="grid-column:1/-1">
+            <div class="af-icon" style="background:#f3e8ff">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M3 12h18M12 3l9 9-9 9" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div><div class="af-title">50+ languages &mdash; with cultural context</div><div class="af-desc">Not just translation &mdash; analogies and examples are adapted to your cultural context so concepts feel familiar, not foreign</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MARQUEE 3 ── -->
+<div class="mq yellow" style="border-top:1.5px solid var(--ink);border-bottom:none">
+  <div class="mq-track L" style="--d:30s">
+    <span class="mq-item">For every mind<span class="mq-sep"></span></span><span class="mq-item">Every format<span class="mq-sep"></span></span><span class="mq-item">Every language<span class="mq-sep"></span></span><span class="mq-item">Every depth<span class="mq-sep"></span></span><span class="mq-item">Every learner<span class="mq-sep"></span></span><span class="mq-item">No format barrier<span class="mq-sep"></span></span><span class="mq-item">Knowledge unlocked<span class="mq-sep"></span></span><span class="mq-item">For every mind<span class="mq-sep"></span></span><span class="mq-item">Every format<span class="mq-sep"></span></span><span class="mq-item">Every language<span class="mq-sep"></span></span><span class="mq-item">Every depth<span class="mq-sep"></span></span><span class="mq-item">Every learner<span class="mq-sep"></span></span><span class="mq-item">No format barrier<span class="mq-sep"></span></span><span class="mq-item">Knowledge unlocked<span class="mq-sep"></span></span>
+  </div>
+</div>
+
+<!-- ── CTA ── -->
+<section class="cta" style="border-top:none;border-bottom:none">
+  <svg style="position:absolute;top:40px;left:60px;width:76px;opacity:.18" viewBox="0 0 76 76"><polygon points="38,4 44,26 68,26 49,41 56,64 38,50 20,64 27,41 8,26 32,26" fill="#1c1917"/></svg>
+  <svg style="position:absolute;bottom:40px;right:80px;width:56px;opacity:.13" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="24" stroke="#1c1917" stroke-width="2" stroke-dasharray="5 4"/></svg>
+  <h2 class="cta-h">Knowledge for<br/><em>every mind.</em></h2>
+  <p style="font-size:1.05rem;color:var(--muted);max-width:520px;line-height:1.65">Upload your first PDF free. No card needed. Experience the difference between reading and truly understanding.</p>
+  <div style="display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap">
+    <a href="app.html" class="btn btn-dark btn-lg">Start learning free &rarr;</a>
+    <a href="#s1" class="btn btn-lg">See how it works</a>
+  </div>
+  <p style="font-size:.78rem;color:var(--muted3)">Free plan available &middot; No credit card required</p>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="ft">
+    <div>
+      <div class="ft-brand">ev.</div>
+      <p class="ft-tag">Making knowledge accessible to every mind, in every format, in every language.</p>
+    </div>
+    <div class="ft-col"><h4>Product</h4><ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">Roadmap</a></li><li><a href="#">Changelog</a></li></ul></div>
+    <div class="ft-col"><h4>Learn</h4><ul><li><a href="#">Blog</a></li><li><a href="#">For educators</a></li><li><a href="#">Accessibility</a></li><li><a href="#">Use cases</a></li></ul></div>
+    <div class="ft-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li><li><a href="#">Contact</a></li></ul></div>
+  </div>
+  <div class="ft-bot"><span>&copy; 2025 EduVision. All rights reserved.</span><span>Made for curious minds everywhere</span></div>
+</footer>
+
+</div><!-- /canvas -->
+<script>
+/* ── LANGUAGE CYCLING ── */
+const LANGS=[
+  {badge:'&#127468;&#127463; English',id:'ob1'},
+  {badge:'&#127470;&#127475; Hindi',id:'ob2'},
+  {badge:'&#127466;&#127480; Spanish',id:'ob3'},
+  {badge:'&#127462;&#127466; Arabic',id:'ob4'},
+  {badge:'&#127471;&#127477; Japanese',id:'ob5'},
+];
+let li=0;
+setInterval(()=>{
+  document.querySelectorAll('.ob').forEach(b=>b.classList.remove('active'));
+  li=(li+1)%LANGS.length;
+  const s=LANGS[li];
+  document.getElementById(s.id)?.classList.add('active');
+  const b=document.getElementById('langBadge');
+  if(b){b.innerHTML=s.badge;b.style.transform='scale(1.12)';setTimeout(()=>b.style.transform='scale(1)',300);}
+},3200);
+
+/* ── DIAGRAM BUILDER ── */
+const DNODES=[
+  {txt:'&#x25B6; Ligand binds receptor',cl:'yl'},
+  {txt:'&#x2726; Autophosphorylation',cl:''},
+  {txt:'&#x25C6; SH2 protein docking',cl:''},
+  {txt:'&#x21F0; Ras-MAPK activation',cl:'pk'},
+  {txt:'&#x2605; Gene expression change',cl:'yl'},
+];
+function buildDiagram(){
+  const el=document.getElementById('diag');if(!el)return;el.innerHTML='';
+  DNODES.forEach((n,i)=>{
+    const node=document.createElement('div');
+    node.className=`diagram-node ${n.cl}`;node.innerHTML=n.txt;el.appendChild(node);
+    if(i<DNODES.length-1){const line=document.createElement('div');line.className='diagram-line';el.appendChild(line);}
+    setTimeout(()=>{
+      node.classList.add('show');
+      if(i<DNODES.length-1)setTimeout(()=>el.querySelectorAll('.diagram-line')[i].classList.add('show'),200);
+    },i*480+500);
+  });
+}
+buildDiagram();
+
+/* ── ROADMAP ── */
+const RD=[
+  [{ico:'&#10003;',l:'Key definitions',s:'Foundation &middot; ~10 min',cl:'done',quiz:true},
+   {ico:'&#x25CF;',l:'Michaelis-Menten formula',s:'You are here &middot; ~15 min',cl:'now',quiz:true},
+   {ico:'&#x25CB;',l:'High-yield inhibition types',s:'Next &middot; ~15 min',cl:'',quiz:true},
+   {ico:'&#x25A1;',l:'Past paper patterns',s:'Unlocks after previous',cl:'locked',quiz:false}],
+  [{ico:'&#10003;',l:'What is a catalyst?',s:'Foundation &middot; ~15 min',cl:'done',quiz:true},
+   {ico:'&#x25CF;',l:'Enzyme-substrate interactions',s:'You are here &middot; ~25 min',cl:'now',quiz:true},
+   {ico:'&#x25CB;',l:'Michaelis-Menten kinetics',s:'Core concept &middot; ~30 min',cl:'',quiz:true},
+   {ico:'&#x25CB;',l:'Inhibition types &amp; Km',s:'Application &middot; ~20 min',cl:'',quiz:true},
+   {ico:'&#x25A1;',l:'Allosteric regulation',s:'Unlocks after previous',cl:'locked',quiz:false}],
+  [{ico:'&#10003;',l:'Thermodynamics of catalysis',s:'Foundation &middot; ~30 min',cl:'done',quiz:true},
+   {ico:'&#x25CF;',l:'Enzyme kinetics (deep dive)',s:'You are here &middot; ~45 min',cl:'now',quiz:true},
+   {ico:'&#x25CB;',l:'Michaelis-Menten derivation',s:'~40 min',cl:'',quiz:true},
+   {ico:'&#x25CB;',l:'Competitive vs allosteric inhibition',s:'~35 min',cl:'',quiz:true},
+   {ico:'&#x25CB;',l:'pH, temperature &amp; enzyme engineering',s:'~30 min',cl:'',quiz:true},
+   {ico:'&#x25A1;',l:'Research methods &amp; assays',s:'Unlocks after previous',cl:'locked',quiz:false}],
+];
+const DL=['Just the exam bits','Solid understanding','Become an expert'];
+
+function renderRoadmap(idx){
+  const t=document.getElementById('roadmapTrack');if(!t)return;
+  t.innerHTML=RD[idx].map(d=>`
+    <div class="rs ${d.cl}">
+      <div class="rs-dot"></div>
+      <div class="rs-card">
+        <div class="rs-ico">${d.ico}</div>
+        <div style="flex:1">
+          <div class="rs-label">${d.l}</div>
+          <div class="rs-sub">${d.s}</div>
+        </div>
+        ${d.quiz?`<button class="rs-quiz-btn" onclick="event.stopPropagation();this.textContent='Opening...';setTimeout(()=>this.textContent='Take quiz',1200)">Take quiz</button>`:''}
+      </div>
+    </div>`).join('');
+  document.getElementById('depthBadge').textContent=DL[idx];
+  setTimeout(()=>t.querySelectorAll('.rs').forEach((s,i)=>setTimeout(()=>s.classList.add('vis'),i*110)),10);
+}
+renderRoadmap(1);
+
+function setDepth(idx,el){
+  document.querySelectorAll('.depth-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');renderRoadmap(idx);
+}
+
+/* ── QUIZ QUESTIONS PER FORMAT ── */
+const QUIZ_DATA={
+  mcq:{q:'At low [S], reaction rate is approximately proportional to:',
+       opts:['Vmax only','[S] &times; (Vmax / Km)','Km alone','1 / Vmax'],correct:1,
+       fb:'Correct! At low [S] &laquo; Km, rate &asymp; Vmax[S]/Km',fbw:'Not quite &mdash; at low [S], the rate depends linearly on [S].'},
+  tf:{q:'At very high substrate concentrations, the reaction rate approaches Vmax regardless of enzyme amount.',
+      correct:true,fb:'Correct! At saturating [S], all enzyme active sites are occupied.',fbw:'False &mdash; at saturating [S], rate does approach Vmax.'},
+  ow:{q:'What symbol represents the substrate concentration at half-maximal velocity?',
+      correct:['km','k_m','michaelis constant'],fb:'Correct! Km (Michaelis constant) is the substrate concentration at &frac12; Vmax.',fbw:'Not quite. The answer is Km (the Michaelis constant).'},
+  os:{q:'In one sentence, explain what Vmax represents in the Michaelis-Menten equation.',
+      sample:'Vmax is the maximum reaction velocity achieved when all enzyme active sites are saturated with substrate.'},
+  match:{q:'Match each term to its definition.',
+         pairs:[['Km','[S] at &frac12; Vmax'],['Vmax','Maximum reaction rate'],['kcat','Turnover number'],['Kd','Dissociation constant']]}
+};
+
+let selectedMatchLeft=null, matchedPairs=new Set();
+
+function switchFormat(fmt,el){
+  document.querySelectorAll('.qf-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['MCQ','TF','OW','OS','Match'].forEach(f=>document.getElementById('fmt'+f).style.display='none');
+  document.getElementById('qQuestion').innerHTML=QUIZ_DATA[fmt].q;
+  const fmtMap={mcq:'MCQ',tf:'TF',ow:'OW',os:'OS',match:'Match'};
+  document.getElementById('fmt'+fmtMap[fmt]).style.display='';
+  // reset feedback
+  document.querySelectorAll('.q-feedback').forEach(f=>{f.className='q-feedback';f.textContent='';});
+  document.querySelectorAll('.qopt').forEach(o=>o.classList.remove('correct','wrong'));
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected-t','selected-f'));
+  const owi=document.getElementById('owInput');if(owi)owi.value='';
+  const osi=document.getElementById('osInput');if(osi)osi.value='';
+  // init match
+  if(fmt==='match'){
+    selectedMatchLeft=null;matchedPairs.clear();
+    const pairs=QUIZ_DATA.match.pairs;
+    const lc=document.getElementById('matchLeft'),rc=document.getElementById('matchRight');
+    lc.innerHTML=pairs.map((p,i)=>`<div class="match-item" data-idx="${i}" data-side="left" onclick="selectMatch(this)">${p[0]}</div>`).join('');
+    const shuffled=[...pairs].map((p,i)=>({def:p[1],idx:i})).sort(()=>Math.random()-.5);
+    rc.innerHTML=shuffled.map(p=>`<div class="match-item" data-idx="${p.idx}" data-side="right" onclick="selectMatch(this)">${p.def}</div>`).join('');
+  }
+}
+// init
+document.getElementById('qQuestion').innerHTML=QUIZ_DATA.mcq.q;
+
+function showFB(id,correct,msg){
+  const el=document.getElementById(id);
+  el.className='q-feedback show '+(correct?'correct':'wrong');
+  el.innerHTML=(correct?'&#10003; ':'&#10007; ')+msg;
+}
+
+function answerMCQ(el,correct){
+  const opts=document.querySelectorAll('#fmtMCQ .qopt');
+  opts.forEach(o=>o.classList.remove('correct','wrong'));
+  el.classList.add(correct?'correct':'wrong');
+  if(!correct)opts[1].classList.add('correct');
+  showFB('fbMCQ',correct,correct?QUIZ_DATA.mcq.fb:QUIZ_DATA.mcq.fbw);
+}
+
+function answerTF(el,answer){
+  const d=QUIZ_DATA.tf;
+  const correct=answer===d.correct;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected-t','selected-f'));
+  el.classList.add(answer?'selected-t':'selected-f');
+  showFB('fbTF',correct,correct?d.fb:d.fbw);
+}
+
+function resetOWFeedback(){document.getElementById('fbOW').className='q-feedback';}
+function answerOW(){
+  const val=document.getElementById('owInput').value.trim().toLowerCase();
+  const d=QUIZ_DATA.ow;const correct=d.correct.some(a=>val.includes(a)||a.includes(val));
+  showFB('fbOW',correct,correct?d.fb:d.fbw);
+}
+
+function answerOS(){
+  const val=document.getElementById('osInput').value.trim();
+  if(!val)return;
+  const d=QUIZ_DATA.os;
+  showFB('fbOS',true,'Great attempt! Sample answer: '+d.sample);
+}
+
+function selectMatch(el){
+  const side=el.dataset.side,idx=parseInt(el.dataset.idx);
+  if(el.classList.contains('matched'))return;
+  if(side==='left'){
+    document.querySelectorAll('#matchLeft .match-item').forEach(i=>i.classList.remove('selected'));
+    el.classList.add('selected');selectedMatchLeft=idx;
+  } else {
+    if(selectedMatchLeft===null)return;
+    if(selectedMatchLeft===idx){
+      // correct
+      document.querySelectorAll('#matchLeft .match-item').forEach(i=>{if(parseInt(i.dataset.idx)===selectedMatchLeft){i.classList.remove('selected');i.classList.add('matched');}});
+      el.classList.add('matched');matchedPairs.add(idx);selectedMatchLeft=null;
+      if(matchedPairs.size===QUIZ_DATA.match.pairs.length)showFB('fbMatch',true,'All matched correctly!');
+    } else {
+      el.style.animation='shake .3s ease';setTimeout(()=>el.style.animation='',300);
+      document.querySelectorAll('#matchLeft .match-item').forEach(i=>i.classList.remove('selected'));
+      selectedMatchLeft=null;
+    }
+  }
+}
+
+/* ── DOC COVERAGE BARS ANIMATE ── */
+const covObs=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){
+    document.querySelectorAll('.doc-coverage-fill').forEach(b=>b.style.width=b.dataset.w+'%');
+    covObs.disconnect();
+  }
+},{threshold:.3});
+const docList=document.querySelector('.doc-list');if(docList)covObs.observe(docList);
+
+/* ── WEAK BARS ── */
+const barObs=new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting){
+    document.querySelectorAll('.w-bar').forEach(b=>b.style.width=b.dataset.w+'%');
+    barObs.disconnect();
+  }
+},{threshold:.3});
+const wb=document.getElementById('weakBars');if(wb)barObs.observe(wb);
+
+/* ── SCROLL REVEAL ── */
+const revObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('vis');});
+},{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal,.reveal-l,.reveal-r').forEach(el=>revObs.observe(el));
+
+/* ── SHAKE ANIMATION ── */
+const style=document.createElement('style');
+style.textContent='@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}';
+document.head.appendChild(style);
+</script>
 </body>
 </html>

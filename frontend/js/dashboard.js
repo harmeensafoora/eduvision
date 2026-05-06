@@ -21,10 +21,12 @@ async function renderDashboard() {
   if (dashName) dashName.textContent = S.user.name || 'Learner';
 
   const tags = document.getElementById('dashLearnerTags');
-  if (tags) {
-    tags.innerHTML = (S.user.learner_types || []).length
-      ? (S.user.learner_types || []).map(t => '<span class="dash-ltag">' + t + '</span>').join('')
-      : '<span class="dash-ltag">Learner</span>';
+  if (tags) tags.style.display = 'none'; // Hidden as per accessibility purge
+
+  const memberSince = document.getElementById('dashMemberSince');
+  if (memberSince && S.user.created_at) {
+    const d = new Date(S.user.created_at);
+    memberSince.textContent = 'Member since ' + d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   }
 
   const streakVal = S.user.streak_count || 0;
@@ -174,4 +176,16 @@ async function renderBadgesGrid() {
       '<div class="badge-name">' + t.name + '</div>' +
       '</div>';
   }).join('');
+}
+
+function shareProfile() {
+  const url = window.location.href;
+  const msg = `Check out my EduVision learning profile! I've mastered ${S.dashData?.stats?.topics_mastered || 0} topics already.`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(msg).then(() => {
+      alert('Profile status copied to clipboard!');
+    });
+  } else {
+    alert(msg);
+  }
 }

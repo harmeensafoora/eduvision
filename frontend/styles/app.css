@@ -83,6 +83,27 @@
 .google-btn:hover { box-shadow: var(--sh-float); transform: translateY(-2px); border-color: rgba(28,25,23,.25); }
 .auth-note { text-align: center; font-size: .78rem; color: var(--muted2); margin-top: 1.5rem; line-height: 1.7; }
 
+.dev-form { display: flex; flex-direction: column; gap: .65rem; }
+.auth-input {
+  width: 100%;
+  padding: .85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: .95rem;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.auth-input:focus { border-color: #1c1917; box-shadow: 0 0 0 3px rgba(28,25,23,.08); }
+.auth-error {
+  padding: .65rem .9rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: .82rem;
+}
+
 /* ═══════════════════════════════════════════
    ONBOARDING MODAL
 ═══════════════════════════════════════════ */
@@ -1758,3 +1779,57 @@ body.profile-dyscalculia .summary-text {
   cursor: pointer; color: var(--muted); transition: border-color .15s, color .15s;
 }
 .pdf-action-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── Profile modal ──────────────────────────────────────────────────────────── */
+.profile-modal {
+  position: fixed; inset: 0; z-index: 9998;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.4); backdrop-filter: blur(4px);
+}
+.profile-modal-content {
+  background: #fff; border-radius: 16px; padding: 1.5rem;
+  max-width: 520px; width: 90%; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.profile-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.profile-modal-close {
+  width: 28px; height: 28px; border: none; background: transparent;
+  cursor: pointer; color: var(--muted2); display: flex; align-items: center;
+  justify-content: center; border-radius: 6px;
+  transition: background .15s, color .15s;
+}
+.profile-modal-close:hover { background: var(--surface2); color: var(--ink); }
+
+/* ── Delete account modal ──────────────────────────────────────────────────── */
+.delete-modal {
+  position: fixed; inset: 0; z-index: 9999;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.4); backdrop-filter: blur(4px);
+}
+.delete-modal-content {
+  background: #fff; border-radius: 16px; padding: 1.5rem;
+  max-width: 400px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+
+/* ── Depth cards (for profile) ─────────────────────────────────────────────── */
+.depth-card {
+  padding: .5rem 1.2rem; border: 1.5px solid rgba(28,25,23,.15);
+  border-radius: 10px; background: var(--surface); font-size: .82rem;
+  font-weight: 600; color: var(--muted2); cursor: pointer;
+  transition: all .15s;
+}
+.depth-card:hover { border-color: var(--ink); }
+.depth-card.sel { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* ── Roadmap complete button ─────────────────────────────────────────────── */
+.rm-complete-btn {
+  width: 28px; height: 28px; border-radius: 7px; border: 1.5px solid var(--green);
+  background: #f0fdf4; color: var(--green); font-size: .85rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.rm-complete-btn:hover { background: var(--green); color: #fff; }
