@@ -22,10 +22,13 @@ def _auto_secret(var_name: str) -> str:
 
 
 class Settings:
-        # Google Gemini — required for AI features
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    # Gemini configuration
+    GEMINI_API_KEY_1: str = os.getenv("GEMINI_API_KEY_1", "")
+    GEMINI_API_KEY_2: str = os.getenv("GEMINI_API_KEY_2", "")
+
     GEMINI_MODEL: str = os.getenv(
-        "GEMINI_MODEL", "gemini-flash-lite-latest"
+        "GEMINI_MODEL",
+        "gemini-flash-lite-latest"
     )
 
     # Database — SQLite fallback
@@ -85,7 +88,10 @@ class Settings:
 
     @property
     def ai_ready(self) -> bool:
-        return bool(self.GEMINI_API_KEY)
+        return bool(
+            self.GEMINI_API_KEY_1
+            or self.GEMINI_API_KEY_2
+        )
 
 
 settings = Settings()
