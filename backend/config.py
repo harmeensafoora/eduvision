@@ -22,12 +22,10 @@ def _auto_secret(var_name: str) -> str:
 
 
 class Settings:
-    # Azure OpenAI — required for AI features
-    AZURE_OPENAI_ENDPOINT: str = os.getenv("AZURE_OPENAI_ENDPOINT", "")
-    AZURE_OPENAI_API_KEY: str = os.getenv("AZURE_OPENAI_API_KEY", "")
-    AZURE_OPENAI_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
-    AZURE_OPENAI_API_VERSION: str = os.getenv(
-        "AZURE_OPENAI_API_VERSION", "2024-12-01-preview"
+        # Google Gemini — required for AI features
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv(
+        "GEMINI_MODEL", "gemini-flash-lite-latest"
     )
 
     # Database — SQLite fallback
@@ -87,7 +85,7 @@ class Settings:
 
     @property
     def ai_ready(self) -> bool:
-        return bool(self.AZURE_OPENAI_ENDPOINT and self.AZURE_OPENAI_API_KEY)
+        return bool(self.GEMINI_API_KEY)
 
 
 settings = Settings()
