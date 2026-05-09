@@ -20,6 +20,7 @@ function showAuthView() {
 function showApp() {
   document.getElementById('authView').style.display = 'none';
   document.getElementById('appShell').style.display = 'block';
+  if (S.user?.language_pref) S.currentLang = S.user.language_pref;
   renderNavAvatar();
   loadSessions();
   const hash = window.location.hash.replace('#', '') || 'upload';
@@ -234,6 +235,7 @@ async function saveProfile() {
     localStorage.setItem('ev_user', JSON.stringify(S.user));
     renderNavAvatar();
     closeProfileModal();
+    toast('Profile saved!', 'success', 3000);
 
     // Re-apply learner modes
     if (typeof applyAllLearnerModes === 'function') applyAllLearnerModes(types);

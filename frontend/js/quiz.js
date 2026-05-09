@@ -27,7 +27,9 @@ function setupQuizView() {
   const sel = document.getElementById('quizTopicSelect');
   sel.innerHTML = S.topics.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('')||'<option value="">No topics loaded</option>';
   if (S.quizSetup.topicId) sel.value = S.quizSetup.topicId;
-  _updateStepDots(3,0);
+  // Clear step dots on setup — they only make sense during an active quiz
+  const ind = document.getElementById('quizStepIndicator');
+  if (ind) ind.innerHTML = '';
   // Reset mode toggle
   _setQuizMode('normal');
   _refreshWrongCount();
@@ -82,7 +84,7 @@ async function startQuiz() {
     return;
   }
 
-  const types = Array.from(document.querySelectorAll('.q-chip.sel')).map(c=>c.dataset.type);
+  const types = Array.from(document.querySelectorAll('.qt-chip.sel')).map(c=>c.dataset.type);
   if (!types.length) { showError('quizSetupError','Please select at least one question type.'); return; }
   S.quizSetup.types = types;
 

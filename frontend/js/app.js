@@ -47,14 +47,43 @@ function showLoader(msg, steps) {
 }
 function hideLoader() { document.getElementById('globalLoader').style.display = 'none'; }
 
+// ── Toast notifications ───────────────────────────────────────────────────────
+var _TOAST_ICONS = {
+  success: '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12l3 3 5-5"/></svg>',
+  error:   '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>',
+  info:    '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#1d4ed8" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>',
+  warning: '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#92400e" stroke-width="2.5"><path stroke-linecap="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
+};
+function toast(msg, type, duration) {
+  type = type || 'info';
+  duration = duration || 4000;
+  var container = document.getElementById('toastContainer');
+  if (!container) return;
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.innerHTML =
+    '<div class="toast-icon">' + (_TOAST_ICONS[type] || _TOAST_ICONS.info) + '</div>' +
+    '<div class="toast-body"><div class="toast-msg">' + msg + '</div></div>' +
+    '<button class="toast-close" onclick="this.closest(\'.toast\').remove()">&#x2715;</button>' +
+    '<div class="toast-progress" style="animation-duration:' + duration + 'ms"></div>';
+  container.appendChild(t);
+  setTimeout(function() {
+    t.classList.add('closing');
+    setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 280);
+  }, duration);
+}
+
 // ── Inline error helper ───────────────────────────────────────────────────────
 function showError(id, msg) {
-  const el = document.getElementById(id);
+  // Always fire a toast so the message is visible regardless of scroll position
+  toast(msg, 'error');
+  // Also update the inline element if present (keeps existing error anchors working)
+  var el = document.getElementById(id);
   if (!el) return;
   el.textContent = msg;
   el.classList.add('show');
   el.style.display = 'flex';
-  setTimeout(() => { el.classList.remove('show'); el.style.display = 'none'; }, 4000);
+  setTimeout(function() { el.classList.remove('show'); el.style.display = 'none'; }, 4000);
 }
 
 // ── Learner Profile ───────────────────────────────────────────────────────────────
@@ -94,7 +123,46 @@ function svgIcon(path, size) {
   return '<svg width="' + size + '" height="' + size + '" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">' + path + '</svg>';
 }
 
+// ── No-session empty states ───────────────────────────────────────────────────
+var _NO_SESSION_INFO = {
+  summary:   { title: 'No study materials yet',   desc: 'Upload a PDF to see AI-generated summaries of each topic.', icon: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>' },
+  roadmap:   { title: 'No roadmap yet',            desc: 'Upload a PDF to get a personalised learning path.', icon: '<path d="M3 12h18M12 3l9 9-9 9"/>' },
+  quiz:      { title: 'Nothing to quiz on yet',    desc: 'Upload a PDF to generate questions from your materials.', icon: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m0 4h.01"/>' },
+  dashboard: { title: 'No progress tracked yet',  desc: 'Take some quizzes to start seeing your mastery stats.', icon: '<path d="M3 17l4-8 4 4 4-6 4 10"/>' },
+};
+
+function _renderNoSessionState(view) {
+  var el = document.getElementById('view-' + view);
+  if (!el) return;
+  var wrap = el.querySelector('.no-session-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'no-session-wrap';
+    el.prepend(wrap);
+  }
+  var m = _NO_SESSION_INFO[view] || { title: 'Nothing here yet', desc: 'Upload a PDF to get started.', icon: '<rect x="4" y="2" width="16" height="20" rx="2"/>' };
+  wrap.innerHTML =
+    '<div class="no-session-state">' +
+      '<div class="no-session-icon">' +
+        '<svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#1c1917" stroke-width="1.6">' + m.icon + '</svg>' +
+      '</div>' +
+      '<div class="no-session-title">' + m.title + '</div>' +
+      '<div class="no-session-desc">' + m.desc + '</div>' +
+      '<button class="btn btn-dark btn-lg" onclick="navigate(\'upload\')">Upload a PDF &rarr;</button>' +
+    '</div>';
+  wrap.style.display = 'flex';
+}
+
+function _clearNoSessionState(view) {
+  var el = document.getElementById('view-' + view);
+  if (!el) return;
+  var wrap = el.querySelector('.no-session-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
 // ── Routing ───────────────────────────────────────────────────────────────────
+var _SESSION_VIEWS = ['summary', 'roadmap', 'quiz', 'dashboard'];
+
 function navigate(view) {
   closeDropdown();
   // Fade out
@@ -115,6 +183,13 @@ function navigate(view) {
 
     // Fade in
     canvas.style.opacity = '1';
+
+    // Guard: views that need a loaded session
+    if (_SESSION_VIEWS.includes(view) && !S.session) {
+      _renderNoSessionState(view);
+      return;
+    }
+    if (_SESSION_VIEWS.includes(view)) _clearNoSessionState(view);
 
     if (view === 'summary') {
       if (S.topics.length) {
@@ -143,6 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', e => {
     if (!e.target.closest('#navAvatar') && !e.target.closest('#userDropdown')) closeDropdown();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDropdown();
   });
 
   document.querySelectorAll('.learner-tag-opt').forEach(t =>

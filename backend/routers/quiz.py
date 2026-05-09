@@ -25,9 +25,13 @@ from backend.models.topic import Topic
 from backend.schemas.quiz import GenerateQuizRequest, QuizResultOut, SubmitQuizRequest
 from backend.services.ai_service import ai_service
 from backend.utils.auth_utils import get_current_user
+from backend.utils.cache import cache
 from backend.models.user import User
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
+
+EXCERPT_CACHE_TTL = 21600   # 6 hours — excerpts rarely change after upload
+QUIZ_GEN_CACHE_TTL = 1200   # 20 min — avoids duplicate AI calls on rapid retries
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,6 +62,10 @@ def _get_wrong_questions(user_id: str, topic_id: str, db: DBSession) -> list[dic
 
 
 def _get_topic_excerpts(topic: Topic, db: DBSession, max_chars: int = 4000) -> str:
+    cache_key = f"excerpts:{topic.id}:{max_chars}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
     pdfs = db.query(PDF).filter(PDF.session_id == topic.session_id).all()
     excerpts = []
     for pdf in pdfs:
@@ -70,7 +78,9 @@ def _get_topic_excerpts(topic: Topic, db: DBSession, max_chars: int = 4000) -> s
         excerpts.extend(relevant[:8])
         if sum(len(e) for e in excerpts) > max_chars:
             break
-    return "\n\n---\n\n".join(excerpts)[:max_chars]
+    result = "\n\n---\n\n".join(excerpts)[:max_chars]
+    cache.set(cache_key, result, ex=EXCERPT_CACHE_TTL)
+    return result
 
 
 def _evaluate_answer(q: dict, student_answer: Any, excerpts: str) -> dict:
@@ -226,15 +236,24 @@ def generate_quiz(
     # If the user has exhausted the question pool (seen many), let the AI know it's OK to vary
     exhausted = len(seen_hashes) >= 40
 
-    questions = ai_service.generate_quiz(
-        topic_name=topic.name,
-        excerpts=excerpts,
-        count=body.count,
-        types=body.types,
-        difficulty=body.difficulty,
-        lang=body.lang,
-        previous_questions=prev_questions if not exhausted else [],
-    )
+    types_key = "_".join(sorted(body.types))
+    completed_count = sum(1 for q in all_prev_quizzes if q.completed_at)
+    quiz_cache_key = f"quiz_gen:{current_user.id}:{topic.id}:{types_key}:{body.difficulty}:{body.lang}:{body.count}:{completed_count}"
+    cached_qs = cache.get(quiz_cache_key)
+    if cached_qs and not exhausted:
+        questions = json.loads(cached_qs)
+    else:
+        questions = ai_service.generate_quiz(
+            topic_name=topic.name,
+            excerpts=excerpts,
+            count=body.count,
+            types=body.types,
+            difficulty=body.difficulty,
+            lang=body.lang,
+            previous_questions=prev_questions if not exhausted else [],
+        )
+        if questions:
+            cache.set(quiz_cache_key, json.dumps(questions), ex=QUIZ_GEN_CACHE_TTL)
 
     if not questions:
         raise HTTPException(

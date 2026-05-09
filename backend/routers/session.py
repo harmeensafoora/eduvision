@@ -230,6 +230,49 @@ async def upload_pdfs(
     if not pdf_files:
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
+    # Read all file bytes once so we can hash them and check for duplicates
+    file_contents = []
+    for upload in pdf_files:
+        content = await upload.read()
+        file_contents.append((upload, content))
+
+    # Compute per-file hashes and build a canonical session fingerprint
+    incoming_hashes = sorted(_sha256(content) for _, content in file_contents)
+
+    # Check whether the user already has a ready session with this exact PDF set.
+    # Single query to avoid N+1 blocking the event loop.
+    existing_ready = (
+        db.query(Session)
+        .filter(Session.user_id == current_user.id, Session.status == "ready")
+        .all()
+    )
+    candidate_ids = [
+        s.id for s in existing_ready
+        if s.pdf_ids and len(s.pdf_ids) == len(pdf_files)
+    ]
+    if candidate_ids:
+        from collections import defaultdict
+        rows = (
+            db.query(PDF.session_id, PDF.file_hash)
+            .filter(PDF.session_id.in_(candidate_ids), PDF.file_hash.isnot(None))
+            .all()
+        )
+        hashes_by_session: dict[str, list[str]] = defaultdict(list)
+        for sid, fhash in rows:
+            hashes_by_session[sid].append(fhash)
+        for sess in existing_ready:
+            if sess.id not in hashes_by_session:
+                continue
+            if sorted(hashes_by_session[sess.id]) == incoming_hashes:
+                sess.last_accessed = datetime.now(timezone.utc)
+                db.commit()
+                return {
+                    "session_id": sess.id,
+                    "status": "ready",
+                    "pdf_count": len(sess.pdf_ids),
+                    "reused": True,
+                }
+
     # Derive session title from first filename
     title = (
         Path(pdf_files[0].filename or "Untitled")
@@ -250,11 +293,8 @@ async def upload_pdfs(
     db.add(session)
 
     pdf_ids = []
-    for upload in pdf_files:
+    for upload, content in file_contents:
         pdf_id = str(uuid.uuid4())
-        content = await upload.read()
-
-        # Compute SHA-256 hash for dedup caching
         file_hash = _sha256(content)
 
         try:

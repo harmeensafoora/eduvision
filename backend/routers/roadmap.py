@@ -17,9 +17,13 @@ from backend.models.topic import Topic
 from backend.schemas.roadmap import RegenerateRoadmapRequest, RoadmapNodeOut, RoadmapOut
 from backend.services.ai_service import ai_service
 from backend.utils.auth_utils import get_current_user
+from backend.utils.cache import cache
 from backend.models.user import User
+import json as _json
 
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
+
+ROADMAP_CACHE_TTL = 3600  # 1 hour
 
 
 def _build_roadmap(
@@ -142,6 +146,11 @@ def get_roadmap(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
 
+    rm_cache_key = f"roadmap:{session_id}:{depth}"
+    cached_rm = cache.get(rm_cache_key)
+    if cached_rm:
+        return RoadmapOut(**_json.loads(cached_rm))
+
     nodes = (
         db.query(RoadmapNode)
         .filter(RoadmapNode.session_id == session_id, RoadmapNode.depth_level == depth)
@@ -152,11 +161,13 @@ def get_roadmap(
     if not nodes:
         nodes = _build_roadmap(session_id, depth, None, db)
 
-    return RoadmapOut(
+    out = RoadmapOut(
         session_id=session_id,
         depth=depth,
         nodes=_nodes_to_out(nodes, db),
     )
+    cache.set(rm_cache_key, out.model_dump_json(), ex=ROADMAP_CACHE_TTL)
+    return out
 
 
 @router.post(
@@ -176,14 +187,17 @@ def regenerate_roadmap(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
 
+    cache.delete(f"roadmap:{session_id}:{body.depth}")
     nodes = _build_roadmap(session_id, body.depth, body.goal, db)
 
-    return RoadmapOut(
+    out = RoadmapOut(
         session_id=session_id,
         depth=body.depth,
         goal=body.goal,
         nodes=_nodes_to_out(nodes, db),
     )
+    cache.set(f"roadmap:{session_id}:{body.depth}", out.model_dump_json(), ex=ROADMAP_CACHE_TTL)
+    return out
 
 
 @router.patch(

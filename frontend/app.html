@@ -22,33 +22,7 @@
   <!-- No onboarding for now as per requirements -->
 
 
-  <!-- ══ USER DROPDOWN ══ -->
-  <div class="user-dropdown" id="userDropdown" style="display:none;position:fixed;top:62px;right:calc(50vw - 650px)">
-    <div class="user-dropdown-header">
-      <div class="ud-name" id="udName">User</div>
-      <div class="ud-email" id="udEmail">user@email.com</div>
-    </div>
-    <div class="ud-item" onclick="navigate('dashboard')">
-      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-      Dashboard
-    </div>
-    <div class="ud-item" onclick="openProfileModal()">
-      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Profile
-    </div>
-    <div class="ud-item" onclick="exportUserData()">
-      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3"/></svg>
-      Export my data
-    </div>
-    <div class="ud-item danger" onclick="confirmDeleteAccount()">
-      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-      Delete account
-    </div>
-    <div class="ud-item danger" onclick="logout()">
-      <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-      Sign out
-    </div>
-  </div>
+  <!-- (User dropdown is rendered inside .nav-right for correct relative positioning) -->
 
   <!-- ══ PROFILE MODAL ══ -->
   <div id="profileModal" class="profile-modal" style="display:none">
@@ -158,6 +132,33 @@
           New
         </button>
         <div id="navAvatar" onclick="toggleDropdown()" style="cursor:pointer"></div>
+        <!-- Dropdown positioned relative to nav-right -->
+        <div class="user-dropdown" id="userDropdown" style="display:none">
+          <div class="ud-header">
+            <div class="ud-name" id="udName">User</div>
+            <div class="ud-email" id="udEmail">user@email.com</div>
+          </div>
+          <div class="ud-item" onclick="navigate('dashboard')">
+            <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            Dashboard
+          </div>
+          <div class="ud-item" onclick="openProfileModal()">
+            <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            Profile
+          </div>
+          <div class="ud-item" onclick="exportUserData()">
+            <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3"/></svg>
+            Export my data
+          </div>
+          <div class="ud-item danger" onclick="confirmDeleteAccount()">
+            <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Delete account
+          </div>
+          <div class="ud-item danger" onclick="logout()">
+            <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Sign out
+          </div>
+        </div>
       </div>
     </nav>
 
@@ -198,11 +199,11 @@
 
         <div id="uploadProgress" class="upload-progress-panel" style="display:none">
           <div style="font-weight:700;font-size:.88rem;margin-bottom:.8rem">Analysing your materials&hellip;</div>
-          <div class="prog-step" id="ps1"><div class="prog-icon spin">&#x2022;</div>Reading your PDFs&hellip;</div>
-          <div class="prog-step" id="ps2"><div class="prog-icon">&#x25CB;</div>Mapping topics across documents&hellip;</div>
-          <div class="prog-step" id="ps3"><div class="prog-icon">&#x25CB;</div>Scoring coverage per topic&hellip;</div>
-          <div class="prog-step" id="ps4"><div class="prog-icon">&#x25CB;</div>Building your learning roadmap&hellip;</div>
-          <div class="prog-step" id="ps5"><div class="prog-icon">&#x25CB;</div>Finalising recommendations&hellip;</div>
+          <div class="prog-step" id="ps1"><div class="prog-icon spin"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg></div>Reading your PDFs&hellip;</div>
+          <div class="prog-step" id="ps2"><div class="prog-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg></div>Mapping topics across documents&hellip;</div>
+          <div class="prog-step" id="ps3"><div class="prog-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg></div>Scoring coverage per topic&hellip;</div>
+          <div class="prog-step" id="ps4"><div class="prog-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg></div>Building your learning roadmap&hellip;</div>
+          <div class="prog-step" id="ps5"><div class="prog-icon"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg></div>Finalising recommendations&hellip;</div>
         </div>
 
         <div style="margin-top:1.5rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
@@ -235,12 +236,35 @@
             <div class="empty-sub">Choose a topic from the sidebar to view its summary</div>
           </div>
           <div id="summaryContent" style="display:none">
-            <div class="depth-tabs" id="depthTabs">
-              <button class="depth-tab active" onclick="switchDepth('quick',this)">Quick</button>
-              <button class="depth-tab" onclick="switchDepth('structured',this)">Structured</button>
-              <button class="depth-tab" onclick="switchDepth('detailed',this)">Detailed</button>
+            <div class="summary-toolbar">
+              <div class="depth-tabs" id="depthTabs">
+                <button class="depth-tab" data-depth="quick" onclick="switchDepth('quick',this)">Quick</button>
+                <button class="depth-tab" data-depth="structured" onclick="switchDepth('structured',this)">Structured</button>
+                <button class="depth-tab" data-depth="detailed" onclick="switchDepth('detailed',this)">Detailed</button>
+              </div>
+              <div class="summary-toolbar-right">
+                <select class="select summary-lang-select" id="langSelect" onchange="switchLang(this.value)">
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="ar">Arabic</option>
+                  <option value="ja">Japanese</option>
+                  <option value="de">German</option>
+                  <option value="ur">Urdu</option>
+                  <option value="zh">Chinese</option>
+                  <option value="pt">Portuguese</option>
+                  <option value="ru">Russian</option>
+                  <option value="ko">Korean</option>
+                  <option value="it">Italian</option>
+                  <option value="tr">Turkish</option>
+                  <option value="bn">Bengali</option>
+                  <option value="ta">Tamil</option>
+                  <option value="fa">Persian</option>
+                  <option value="he">Hebrew</option>
+                </select>
+              </div>
             </div>
-            <div class="lang-row" id="langRow"></div>
             <div id="summaryBody" class="summary-content"></div>
             <div class="summary-quiz-cta" id="summaryQuizCta">
               <div>
@@ -285,7 +309,7 @@
           <div class="rm-goal-input">
             <div class="rm-goal-label">Your learning goal (optional)</div>
             <input class="input" id="goalInput" placeholder="e.g. Pass my biochemistry exam&hellip;" style="font-size:.85rem"/>
-            <button class="btn btn-sm" style="margin-top:.6rem;width:100%;justify-content:center" onclick="regenerateRoadmap()">Regenerate &rarr;</button>
+            <button id="regenerateBtn" class="btn btn-sm" style="margin-top:.6rem;width:100%;justify-content:center" onclick="regenerateRoadmap()">Regenerate &rarr;</button>
           </div>
           <div class="rm-legend">
             <div class="rm-legend-item"><div class="rm-legend-dot" style="background:var(--yellow-d);border:1.5px solid var(--ink)"></div>Done</div>
@@ -360,14 +384,14 @@
             <div class="setup-grid">
               <div>
                 <div class="setup-label">Question types</div>
-                <div class="qt-multi" id="qtMulti">
-                  <div class="q-chip" data-type="mcq" onclick="toggleQChip(this)">Multiple Choice</div>
-                  <div class="q-chip" data-type="tf" onclick="toggleQChip(this)">True / False</div>
-                  <div class="q-chip" data-type="ow" onclick="toggleQChip(this)">One Word</div>
-                  <div class="q-chip" data-type="fb" onclick="toggleQChip(this)">Fill Blank</div>
-                  <div class="q-chip" data-type="os" onclick="toggleQChip(this)">One Sentence</div>
-                  <div class="q-chip" data-type="match" onclick="toggleQChip(this)">Match</div>
-                  <div class="q-chip" data-type="diagram" onclick="toggleQChip(this)">Diagram</div>
+                <div class="qt-chips">
+                  <div class="qt-chip sel" data-type="mcq" onclick="toggleQChip(this)">Multiple Choice</div>
+                  <div class="qt-chip" data-type="tf" onclick="toggleQChip(this)">True / False</div>
+                  <div class="qt-chip" data-type="ow" onclick="toggleQChip(this)">One Word</div>
+                  <div class="qt-chip" data-type="fb" onclick="toggleQChip(this)">Fill Blank</div>
+                  <div class="qt-chip" data-type="os" onclick="toggleQChip(this)">One Sentence</div>
+                  <div class="qt-chip" data-type="match" onclick="toggleQChip(this)">Match</div>
+                  <div class="qt-chip" data-type="diagram" onclick="toggleQChip(this)">Diagram</div>
                 </div>
               </div>
               <div>
@@ -534,6 +558,9 @@
     <div class="view" id="view-mindscape"></div>
 
   </div><!-- /appShell -->
+
+  <!-- ══ TOAST CONTAINER ══ -->
+  <div id="toastContainer"></div>
 
 </div><!-- /canvas -->
 

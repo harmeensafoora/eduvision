@@ -5,6 +5,8 @@ async function regenerateRoadmap() {
   if (!S.session) return;
   const goal = document.getElementById('goalInput')?.value || '';
   const track = document.getElementById('roadmapTrack');
+  const btn = document.getElementById('regenerateBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Regenerating…'; }
   track.innerHTML='<div style="padding:2rem;display:flex;align-items:center;gap:.6rem"><div class="ev-loader" style="font-size:1.4rem">ev.</div><span style="font-size:.85rem;color:var(--muted2)">Regenerating roadmap…</span></div>';
   try {
     const data = await apiFetch('/roadmap/'+S.session.id+'/regenerate', {
@@ -22,7 +24,11 @@ async function regenerateRoadmap() {
       (!n.is_locked?'<button class="rm-quiz-btn" onclick="event.stopPropagation();quizFromRoadmap(\''+n.topic_id+'\')">Take quiz</button>':'')+
       '</div></div>'
     ).join('');
-  } catch(e) { track.innerHTML='<div style="padding:1.5rem;font-size:.85rem;color:var(--muted2)">Could not regenerate roadmap: '+e.message+'</div>'; }
+  } catch(e) {
+    track.innerHTML='<div style="padding:1.5rem;font-size:.85rem;color:var(--muted2)">Could not regenerate roadmap: '+e.message+'</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Regenerate →'; }
+  }
 }
 async function renderRoadmap() {
   if (!S.session) return;

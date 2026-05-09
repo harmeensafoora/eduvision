@@ -24,9 +24,13 @@ async function renderDashboard() {
   if (tags) tags.style.display = 'none'; // Hidden as per accessibility purge
 
   const memberSince = document.getElementById('dashMemberSince');
-  if (memberSince && S.user.created_at) {
-    const d = new Date(S.user.created_at);
-    memberSince.textContent = 'Member since ' + d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  if (memberSince) {
+    if (S.user.created_at) {
+      const d = new Date(S.user.created_at);
+      memberSince.textContent = 'Member since ' + d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    } else {
+      memberSince.style.display = 'none';
+    }
   }
 
   const streakVal = S.user.streak_count || 0;
@@ -179,13 +183,13 @@ async function renderBadgesGrid() {
 }
 
 function shareProfile() {
-  const url = window.location.href;
-  const msg = `Check out my EduVision learning profile! I've mastered ${S.dashData?.stats?.topics_mastered || 0} topics already.`;
+  const mastered = (S.dashData?.stats?.topics_mastered) || 0;
+  const msg = 'Check out my EduVision learning profile! I\'ve mastered ' + mastered + ' topics already.';
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(msg).then(() => {
-      alert('Profile status copied to clipboard!');
-    });
+    navigator.clipboard.writeText(msg)
+      .then(() => toast('Profile status copied to clipboard!', 'success', 3000))
+      .catch(() => toast('Could not copy to clipboard.', 'error', 3000));
   } else {
-    alert(msg);
+    toast('Sharing not supported in this browser.', 'info', 3000);
   }
 }

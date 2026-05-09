@@ -38,9 +38,27 @@ async function startAnalysis() {
   document.getElementById('analyseBtn').disabled = true;
   const stepIds = ['ps1','ps2','ps3','ps4','ps5'];
   let stepIdx = 0;
+  var _CHECK_SVG = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+  var _SPIN_SVG  = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>';
   function advanceStep() {
-    if (stepIdx>0) { const prev=document.getElementById(stepIds[stepIdx-1]); if(prev){prev.classList.remove('active');prev.classList.add('done');} }
-    if (stepIdx<stepIds.length) { const el=document.getElementById(stepIds[stepIdx]); if(el){el.classList.add('show','active');} stepIdx++; }
+    if (stepIdx > 0) {
+      const prev = document.getElementById(stepIds[stepIdx-1]);
+      if (prev) {
+        prev.classList.remove('active');
+        prev.classList.add('done');
+        const icon = prev.querySelector('.prog-icon');
+        if (icon) { icon.classList.remove('spin'); icon.innerHTML = _CHECK_SVG; }
+      }
+    }
+    if (stepIdx < stepIds.length) {
+      const el = document.getElementById(stepIds[stepIdx]);
+      if (el) {
+        el.classList.add('show', 'active');
+        const icon = el.querySelector('.prog-icon');
+        if (icon) { icon.classList.add('spin'); icon.innerHTML = _SPIN_SVG; }
+      }
+      stepIdx++;
+    }
   }
   advanceStep();
   const stepTimer = setInterval(advanceStep, 1800);
@@ -49,24 +67,35 @@ async function startAnalysis() {
     S.files.forEach(f => fd.append('files', f));
     const resp = await apiUpload('/session/upload', fd);
     if (!resp) throw new Error('Session expired — please sign in again.');
-    const { session_id } = resp;
-    let ready = false;
-    for (let i=0; i<90; i++) {
-      await new Promise(r=>setTimeout(r,2000));
-      try {
-        const st = await apiFetch('/session/'+session_id+'/status');
-        if (!st) throw new Error('Session expired — please sign in again.');
-        if (st.status==='ready') { ready=true; break; }
-        if (st.status==='error') throw new Error('Processing failed on server.');
-      } catch(e) { if (e.message.includes('Processing') || e.message.includes('expired')) throw e; }
+    const { session_id, reused } = resp;
+
+    if (reused) {
+      // Same PDFs already processed — skip polling, jump straight to the session
+      clearInterval(stepTimer);
+      while (stepIdx <= stepIds.length) advanceStep();
+      await new Promise(r => setTimeout(r, 300));
+      await loadSession(session_id);
+      prog.style.display = 'none';
+      S.files = []; renderFileList();
+    } else {
+      let ready = false;
+      for (let i=0; i<90; i++) {
+        await new Promise(r=>setTimeout(r,2000));
+        try {
+          const st = await apiFetch('/session/'+session_id+'/status');
+          if (!st) throw new Error('Session expired — please sign in again.');
+          if (st.status==='ready') { ready=true; break; }
+          if (st.status==='error') throw new Error('Processing failed on server.');
+        } catch(e) { if (e.message.includes('Processing') || e.message.includes('expired')) throw e; }
+      }
+      if (!ready) throw new Error('Processing timed out.');
+      clearInterval(stepTimer);
+      while (stepIdx<=stepIds.length) advanceStep();
+      await new Promise(r=>setTimeout(r,400));
+      await loadSession(session_id);
+      prog.style.display = 'none';
+      S.files = []; renderFileList();
     }
-    if (!ready) throw new Error('Processing timed out.');
-    clearInterval(stepTimer);
-    while (stepIdx<=stepIds.length) advanceStep();
-    await new Promise(r=>setTimeout(r,400));
-    await loadSession(session_id);
-    prog.style.display = 'none';
-    S.files = []; renderFileList();
   } catch(e) {
     clearInterval(stepTimer);
     prog.style.display = 'none';
@@ -94,28 +123,34 @@ async function loadSessions() {
   }
 }
 
+const _NB_COLORS = ['#fde047','#86efac','#93c5fd','#f9a8d4','#a5b4fc','#fca5a5'];
+
 function renderSessionList() {
   const list = document.getElementById('sessionList');
   if (!S.sessions.length) {
-    list.innerHTML = '<div style="font-size:.82rem;color:var(--muted2)">No recent sessions. Upload your first PDF to get started.</div>';
+    list.innerHTML = '<div class="sessions-empty">No sessions yet. Upload your first PDF to get started.</div>';
     return;
   }
-  let h = '<div style="font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:.8rem">Recent Sessions</div>';
-  S.sessions.forEach(s => {
-    const statusDot = s.status === 'processing'
-      ? '<span style="width:7px;height:7px;border-radius:50%;background:var(--yellow-d);display:inline-block;margin-left:4px" title="Processing"></span>'
+  const activeId = S.session?.id;
+  let h = '<div class="sessions-label">Recent Sessions</div><div class="sessions-grid">';
+  S.sessions.forEach((s, i) => {
+    const color = _NB_COLORS[i % _NB_COLORS.length];
+    const isActive = s.id === activeId;
+    const badge = s.status === 'processing'
+      ? '<span class="nb-badge nb-badge-processing">Processing…</span>'
       : s.status === 'error'
-      ? '<span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;margin-left:4px" title="Error"></span>'
+      ? '<span class="nb-badge nb-badge-error">Error</span>'
       : '';
-    h += '<div class="session-card" onclick="loadSession(\''+s.id+'\')">'+
-      '<div class="session-icon"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#1c1917" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/></svg></div>'+
-      '<div class="session-info">'+
-        '<div class="session-title">'+s.title+statusDot+'</div>'+
-        '<div class="session-meta">'+s.pdfCount+' PDF'+(s.pdfCount===1?'':'s')+' &middot; '+s.date+'</div>'+
-      '</div>'+
-      '<button class="btn btn-sm">Resume &rarr;</button>'+
+    h += '<div class="nb-card' + (isActive ? ' nb-active' : '') + '" onclick="loadSession(\'' + s.id + '\')" style="--nb-color:' + color + '">' +
+      '<div class="nb-stripe"></div>' +
+      '<div class="nb-body">' +
+        '<div class="nb-title">' + s.title + '</div>' +
+        '<div class="nb-meta">' + s.pdfCount + ' PDF' + (s.pdfCount === 1 ? '' : 's') + ' &middot; ' + s.date + '</div>' +
+        badge +
+      '</div>' +
     '</div>';
   });
+  h += '</div>';
   list.innerHTML = h;
 }
 
@@ -125,7 +160,6 @@ async function loadSession(id, silent) {
     const data = await apiFetch('/session/'+id);
     S.session = { id: data.id, title: data.title, pdfCount: (data.pdfs||[]).length };
     S.activeTopic = null;
-    // Preserve coverage_by_pdf on each topic for the PDF library
     S.topics = (data.topics||[]).map(t => ({
       id: t.id,
       name: t.name,
@@ -135,9 +169,13 @@ async function loadSession(id, silent) {
     }));
     S.sessionPdfs = data.pdfs || [];
     if (!silent) hideLoader();
+    renderSessionList();
     renderTopicSidebar();
     renderPdfLibrary();
-    if (!silent) navigate('summary');
+    if (!silent) {
+      navigate('summary');
+      toast('Session loaded — ' + S.session.title, 'success', 3000);
+    }
   } catch(e) {
     if (!silent) {
       hideLoader();

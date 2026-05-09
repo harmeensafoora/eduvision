@@ -123,12 +123,28 @@ def get_summary(
             detail="No content found for this topic in your uploaded PDFs.",
         )
 
-    content = ai_service.generate_summary(
-        topic.name, excerpts, depth, learner_type, lang
-    )
-    keywords = []
-    for section in content.get("sections", []):
-        keywords.extend(section.get("keywords", []))
+    # Always generate in English first (saves tokens on repeat calls, enables reliable translation)
+    if lang != "en":
+        en_base = (
+            db.query(Summary)
+            .filter(Summary.topic_id == topic_id, Summary.depth == depth, Summary.language == "en")
+            .first()
+        )
+        if en_base:
+            en_content = en_base.content
+        else:
+            en_content = ai_service.generate_summary(topic.name, excerpts, depth, learner_type, "en")
+            en_kws = list({kw for s in en_content.get("sections", []) for kw in s.get("keywords", [])})
+            db.add(Summary(
+                id=str(uuid.uuid4()), topic_id=topic_id, pdf_id=topic.best_pdf_id,
+                depth=depth, language="en", content=en_content, keywords=en_kws,
+            ))
+            db.flush()
+        content = translation_service.translate_summary(en_content, lang)
+    else:
+        content = ai_service.generate_summary(topic.name, excerpts, depth, learner_type, "en")
+
+    keywords = list({kw for s in content.get("sections", []) for kw in s.get("keywords", [])})
 
     summary = Summary(
         id=str(uuid.uuid4()),
@@ -137,7 +153,7 @@ def get_summary(
         depth=depth,
         language=lang,
         content=content,
-        keywords=list(set(keywords)),
+        keywords=keywords,
     )
     db.add(summary)
     db.commit()

@@ -75,22 +75,23 @@ class TranslationService:
         """
         Translate text. Returns:
           { "text": "...", "translated": bool, "rtl": bool }
+        Uses Azure Translator when configured, falls back to AI translation.
         """
         if not text or target_lang == "en":
             return {"text": text, "translated": False, "rtl": False}
 
         if settings.USE_TRANSLATION:
             translated = self._azure_translate(text, target_lang)
+            if settings.ai_ready:
+                translated = self._cultural_adapt(translated, target_lang)
+        elif settings.ai_ready:
+            translated = self._ai_translate(text, target_lang)
         else:
-            translated = text  # passthrough
-
-        # Cultural post-processing via GPT (if AI configured)
-        if settings.ai_ready and settings.USE_TRANSLATION:
-            translated = self._cultural_adapt(translated, target_lang)
+            return {"text": text, "translated": False, "rtl": target_lang in _RTL_CODES}
 
         return {
             "text": translated,
-            "translated": settings.USE_TRANSLATION,
+            "translated": True,
             "rtl": target_lang in _RTL_CODES,
         }
 
@@ -110,6 +111,19 @@ class TranslationService:
             translated_sections.append(t_section)
         translated_content["sections"] = translated_sections
         return translated_content
+
+    def _ai_translate(self, text: str, target_lang: str) -> str:
+        """AI-based translation fallback when Azure Translator is not configured."""
+        from backend.services.ai_service import ai_service
+        lang_name = next((l["name"] for l in SUPPORTED_LANGUAGES if l["code"] == target_lang), target_lang)
+        prompt = (
+            f"Translate the following educational text to {lang_name}. "
+            f"Return ONLY the translated text with no explanation or commentary.\n\n{text[:3000]}"
+        )
+        try:
+            return ai_service.complete(prompt, max_tokens=1500)
+        except Exception:
+            return text
 
     def _azure_translate(self, text: str, target_lang: str) -> str:
         endpoint = f"{settings.AZURE_TRANSLATOR_ENDPOINT}/translate"
