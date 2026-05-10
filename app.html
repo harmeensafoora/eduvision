@@ -1288,7 +1288,7 @@ async function startAnalysis() {
     if (!ready) throw new Error('Processing timed out. Try again.');
 
     clearInterval(stepTimer);
-    while (stepIdx <= stepIds.length) advanceStep();
+    while (stepIdx < stepIds.length) advanceStep();
     await new Promise(r => setTimeout(r, 400));
 
     await loadSession(session_id);
