@@ -1,4 +1,5 @@
 """
+Azure OpenAI service wrapper.
 All LLM calls go through this module:
   - Retry logic (3 attempts, exponential backoff)
   - Structured JSON responses
@@ -10,48 +11,61 @@ import time
 from typing import Any
 
 from backend.config import settings
-from backend.services.gemini_router import router as gemini_router
 
 
 class AIService:
     def __init__(self):
-        pass
+        self._client = None
 
-    def _call(
-        self,
-        messages: list[dict],
-        max_tokens: int = 1500,
-        json_mode: bool = False,
-    ) -> str:
-        system_parts = [m["content"] for m in messages if m["role"] == "system"]
-        user_parts = [m["content"] for m in messages if m["role"] == "user"]
+    def _get_client(self):
+        if self._client is None:
+            if not settings.ai_ready:
+                raise RuntimeError(
+                    "Azure OpenAI is not configured. Set AZURE_OPENAI_ENDPOINT and "
+                    "AZURE_OPENAI_API_KEY in your .env file."
+                )
+            from openai import AzureOpenAI
+            self._client = AzureOpenAI(
+                azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                api_key=settings.AZURE_OPENAI_API_KEY,
+                api_version=settings.AZURE_OPENAI_API_VERSION,
+            )
+        return self._client
 
-        system_instruction = "\n\n".join(system_parts).strip() if system_parts else None
-        prompt = "\n\n".join(user_parts).strip()
+    # ── Core call with retry ──────────────────────────────────────────────────
 
+    def _call(self, messages: list[dict], max_tokens: int = 1500, json_mode: bool = False) -> str:
+        client = self._get_client()
+        kwargs: dict[str, Any] = {
+            "model": settings.AZURE_OPENAI_DEPLOYMENT,
+            "messages": messages,
+            "max_tokens": max_tokens,
+        }
         if json_mode:
-            prompt += "\n\nReturn only valid JSON. Do not use markdown fences."
+            kwargs["response_format"] = {"type": "json_object"}
 
         for attempt in range(3):
             try:
-                return gemini_router.generate_text(
-                    prompt=prompt,
-                    system_instruction=system_instruction,
-                )
+                resp = client.chat.completions.create(**kwargs)
+                return resp.choices[0].message.content or ""
             except Exception as exc:
                 if attempt == 2:
                     raise
                 wait = 2 ** attempt
                 print(f"[ai] Attempt {attempt + 1} failed ({exc}), retrying in {wait}s…")
                 time.sleep(wait)
-
         return ""
 
     def complete(self, prompt: str, max_tokens: int = 200) -> str:
-        return self._call([{"role": "user", "content": prompt}], max_tokens=max_tokens)
+        """Single-turn completion — used for topic naming and other simple tasks."""
+        return self._call(
+            [{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+        )
 
     def _parse_json(self, raw: str) -> Any:
         raw = raw.strip()
+        # Strip markdown code fences if present
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[-1]
             raw = raw.rsplit("```", 1)[0]
